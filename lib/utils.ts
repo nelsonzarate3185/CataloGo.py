@@ -10,7 +10,7 @@ export function formatGS(amount: number): string {
   return `Gs. ${Math.round(amount).toLocaleString("es-PY")}`;
 }
 
-/** Genera un slug URL-friendly a partir de un string */
+/** Genera un slug URL-friendly */
 export function slugify(str: string): string {
   return str
     .toLowerCase()
@@ -20,4 +20,9 @@ export function slugify(str: string): string {
     .trim()
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
+}
+
+/** Agrega un sufijo numérico para hacer el slug único: "mi-negocio-2" */
+export function slugifyUnique(base: string, suffix: number): string {
+  return suffix === 0 ? slugify(base) : `${slugify(base)}-${suffix}`;
 }

@@ -1,43 +1,37 @@
 import { formatGS } from "./utils";
-
-export interface CartItem {
-  nombre: string;
-  cantidad: number;
-  precio: number;
-  variante?: string;
-}
+import type { PedidoItem } from "@/types/catalogo";
 
 export interface WhatsAppOrderOptions {
-  telefono: string;
-  nombreNegocio: string;
-  items: CartItem[];
-  nota?: string;
+  whatsapp: string;
+  nombreComercio: string;
+  items: PedidoItem[];
 }
 
-/** Genera la URL de WhatsApp con el pedido pre-formateado */
+/** Genera el mensaje formateado y la URL de WhatsApp */
 export function buildWhatsAppUrl(options: WhatsAppOrderOptions): string {
-  const { telefono, nombreNegocio, items, nota } = options;
+  const { whatsapp, nombreComercio, items } = options;
 
-  const lineas = items.map((item) => {
-    const variante = item.variante ? ` (${item.variante})` : "";
-    return `• ${item.cantidad}x ${item.nombre}${variante} — ${formatGS(item.precio * item.cantidad)}`;
-  });
+  const lineas = items.map(
+    (item) =>
+      `• ${item.nombre} x${item.cantidad} — ${formatGS(item.precio * item.cantidad)}`
+  );
 
   const total = items.reduce((sum, i) => sum + i.precio * i.cantidad, 0);
 
   const mensaje = [
-    `*Pedido en ${nombreNegocio}*`,
+    "Hola! Quiero hacer el siguiente pedido:",
+    "",
+    `🛍️ *${nombreComercio}*`,
     "",
     ...lineas,
     "",
-    `*Total: ${formatGS(total)}*`,
-    nota ? `\nNota: ${nota}` : "",
-  ]
-    .join("\n")
-    .trim();
+    `💰 *Total: ${formatGS(total)}*`,
+    "",
+    "Gracias!",
+  ].join("\n");
 
-  const numero = telefono.replace(/\D/g, "");
-  const encoded = encodeURIComponent(mensaje);
-
-  return `https://wa.me/595${numero}?text=${encoded}`;
+  const numero = whatsapp.replace(/\D/g, "");
+  return `https://wa.me/595${numero}?text=${encodeURIComponent(mensaje)}`;
 }
+
+export type { PedidoItem };

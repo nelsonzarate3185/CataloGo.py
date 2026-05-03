@@ -14,10 +14,19 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/login");
 
+  // Verificar que tenga comercio creado
+  const { data: comercio } = await supabase
+    .from("comercios")
+    .select("id, nombre, slug, plan")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!comercio) redirect("/registro");
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <DashboardNav />
-      <main className="flex-1 p-6 overflow-auto">{children}</main>
+      <DashboardNav comercioNombre={comercio.nombre} comercioSlug={comercio.slug} />
+      <main className="flex-1 p-6 overflow-auto max-w-5xl">{children}</main>
     </div>
   );
 }

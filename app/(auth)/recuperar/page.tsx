@@ -5,20 +5,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 
 const schema = z.object({
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
 });
 
 type Form = z.infer<typeof schema>;
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function RecuperarPage() {
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
   const supabase = createClient();
 
   const {
@@ -29,16 +27,37 @@ export default function LoginPage() {
 
   async function onSubmit(data: Form) {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
+    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+      redirectTo: `${window.location.origin}/actualizar-password`,
     });
     setLoading(false);
     if (error) {
-      toast.error("Email o contraseña incorrectos");
+      toast.error(error.message);
       return;
     }
-    router.push("/dashboard");
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md bg-white rounded-xl border p-8 shadow-sm text-center">
+          <div className="text-4xl mb-4">📧</div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">
+            Revisá tu email
+          </h1>
+          <p className="text-sm text-gray-500">
+            Te enviamos un link para restablecer tu contraseña.
+          </p>
+          <Link
+            href="/login"
+            className="block mt-6 text-sm text-primary font-medium"
+          >
+            Volver al inicio de sesión
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -48,13 +67,10 @@ export default function LoginPage() {
           CataloGo
         </Link>
         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          Iniciá sesión
+          Recuperar contraseña
         </h1>
         <p className="text-sm text-gray-500 mb-6">
-          ¿No tenés cuenta?{" "}
-          <Link href="/registro" className="text-primary font-medium">
-            Registrate gratis
-          </Link>
+          Te enviamos un link a tu email para restablecerla.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -75,39 +91,21 @@ export default function LoginPage() {
             )}
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Contraseña
-              </label>
-              <Link
-                href="/recuperar"
-                className="text-xs text-primary hover:underline"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
-            <input
-              {...register("password")}
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {errors.password && (
-              <p className="text-xs text-red-500 mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
           <button
             type="submit"
             disabled={loading}
             className="w-full py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-60"
           >
-            {loading ? "Iniciando..." : "Iniciar sesión"}
+            {loading ? "Enviando..." : "Enviar link de recuperación"}
           </button>
         </form>
+
+        <Link
+          href="/login"
+          className="block mt-4 text-center text-sm text-gray-500 hover:text-gray-700"
+        >
+          Volver al inicio de sesión
+        </Link>
       </div>
     </div>
   );
