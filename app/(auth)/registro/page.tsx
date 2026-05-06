@@ -54,20 +54,20 @@ export default function RegistroPage() {
         return;
       }
 
-      // 2. Generar slug único para el comercio
-      const baseSlug = slugify(data.nombre);
-      let slug = baseSlug;
-      let attempt = 0;
-      while (true) {
-        const { data: existing } = await supabase
-          .from("comercios")
-          .select("id")
-          .eq("slug", slug)
-          .maybeSingle();
-        if (!existing) break;
-        attempt++;
-        slug = `${baseSlug}-${attempt}`;
+      // Establecer sesión explícitamente antes de queries a la DB
+      if (authData.session) {
+        await supabase.auth.setSession({
+          access_token: authData.session.access_token,
+          refresh_token: authData.session.refresh_token,
+        });
+      } else {
+        toast.error("Activá la confirmación de email deshabilitada en Supabase Auth.");
+        return;
       }
+
+      // 2. Generar slug único con sufijo random para evitar colisiones
+      const suffix = Math.random().toString(36).slice(2, 6);
+      const slug = `${slugify(data.nombre)}-${suffix}`;
 
       // 3. Crear registro en comercios
       const { error: comercioError } = await supabase

@@ -28,7 +28,7 @@ export default function RecuperarPage() {
   async function onSubmit(data: Form) {
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/actualizar-password`,
+      redirectTo: `${window.location.origin}/api/auth/callback?next=/actualizar-password`,
     });
     setLoading(false);
     if (error) {
