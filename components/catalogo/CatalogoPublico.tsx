@@ -78,7 +78,7 @@ export default function CatalogoPublico({
     await supabase.from("pedidos").insert({
       comercio_id: comercio.id,
       catalogo_id: catalogo.id,
-      items: cartItems,
+      items: cartItems as any,
       total: totalPrecio,
     });
 

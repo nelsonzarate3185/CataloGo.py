@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const buffer = await generateQRBuffer(url);
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "image/png",
         "Content-Disposition": `attachment; filename="qr-${slug}.png"`,

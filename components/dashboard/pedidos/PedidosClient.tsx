@@ -60,7 +60,7 @@ export default function PedidosClient({ pedidos, comercioNombre }: Props) {
 
       <div className="space-y-2">
         {pedidos.map((pedido) => {
-          const items = pedido.items as PedidoItem[];
+          const items = pedido.items as unknown as PedidoItem[];
           const isOpen = expandido === pedido.id;
 
           return (
