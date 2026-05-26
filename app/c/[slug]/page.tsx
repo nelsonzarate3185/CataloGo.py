@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { adminDb, fromDoc, fromDocs } from "@/lib/firebase/admin";
 import CatalogoPublico from "@/components/catalogo/CatalogoPublico";
 import type { CatalogoConRelaciones } from "@/types/catalogo";
+import type { Comercio, Catalogo, Categoria, Producto } from "@/types/database";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -10,18 +11,17 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("comercios")
-    .select("nombre, descripcion, logo_url")
-    .eq("slug", slug)
-    .eq("activo", true)
-    .single();
+  const snap = await adminDb
+    .collection("comercios")
+    .where("slug", "==", slug)
+    .where("activo", "==", true)
+    .limit(1)
+    .get();
 
-  if (!data) return { title: "Catálogo no encontrado" };
+  if (snap.empty) return { title: "Catálogo no encontrado" };
 
-  const comercio = data as { nombre: string; descripcion: string | null; logo_url: string | null };
+  const comercio = fromDoc<Comercio>(snap.docs[0])!;
   const title = `${comercio.nombre} — Catálogo digital`;
   const description =
     comercio.descripcion ??
@@ -46,38 +46,54 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CatalogoPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
 
-  const { data: comercioData } = await supabase
-    .from("comercios")
-    .select("id, nombre, whatsapp, logo_url, plan, activo")
-    .eq("slug", slug)
-    .eq("activo", true)
-    .single();
+  const comercioSnap = await adminDb
+    .collection("comercios")
+    .where("slug", "==", slug)
+    .where("activo", "==", true)
+    .limit(1)
+    .get();
 
-  if (!comercioData) notFound();
+  if (comercioSnap.empty) notFound();
 
-  const [catalogosRes] = await Promise.all([
-    supabase
-      .from("catalogos")
-      .select(`
-        *,
-        categorias ( * ),
-        productos ( * )
-      `)
-      .eq("comercio_id", comercioData.id)
-      .eq("activo", true)
-      .order("created_at", { ascending: true })
-      .limit(1),
+  const comercio = fromDoc<Comercio>(comercioSnap.docs[0])!;
+
+  const catalogoSnap = await adminDb
+    .collection("catalogos")
+    .where("comercio_id", "==", comercio.id)
+    .where("activo", "==", true)
+    .limit(1)
+    .get();
+
+  if (catalogoSnap.empty) notFound();
+
+  const catalogoBase = fromDoc<Catalogo>(catalogoSnap.docs[0])!;
+
+  const [categoriasSnap, productosSnap] = await Promise.all([
+    adminDb
+      .collection("categorias")
+      .where("catalogo_id", "==", catalogoBase.id)
+      .where("activo", "==", true)
+      .get(),
+    adminDb
+      .collection("productos")
+      .where("catalogo_id", "==", catalogoBase.id)
+      .where("disponible", "==", true)
+      .get(),
   ]);
 
-  const catalogoRaw = catalogosRes.data?.[0];
-  if (!catalogoRaw) notFound();
-
-  const catalogo = {
-    ...catalogoRaw,
-    comercios: comercioData,
-  } as unknown as CatalogoConRelaciones;
+  const catalogo: CatalogoConRelaciones = {
+    ...catalogoBase,
+    comercios: {
+      id: comercio.id,
+      nombre: comercio.nombre,
+      whatsapp: comercio.whatsapp,
+      logo_url: comercio.logo_url,
+      plan: comercio.plan,
+    },
+    categorias: fromDocs<Categoria>(categoriasSnap),
+    productos: fromDocs<Producto>(productosSnap),
+  };
 
   return <CatalogoPublico catalogo={catalogo} />;
 }

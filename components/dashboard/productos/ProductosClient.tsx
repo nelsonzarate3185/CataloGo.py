@@ -20,7 +20,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Plus, GripVertical, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 import { formatGS } from "@/lib/utils";
 import type { Producto, Catalogo, Categoria, PlanTipo } from "@/types/database";
 import ProductoModal from "./ProductoModal";
@@ -43,7 +44,6 @@ export default function ProductosClient({
   limiteProductos,
 }: Props) {
   const router = useRouter();
-  const supabase = createClient();
   const [productos, setProductos] = useState(initialProductos);
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState<Producto | null>(null);
@@ -68,7 +68,7 @@ export default function ProductosClient({
 
     await Promise.all(
       reordered.map((p) =>
-        supabase.from("productos").update({ orden: p.orden }).eq("id", p.id)
+        updateDoc(doc(db, "productos", p.id), { orden: p.orden })
       )
     );
   }
@@ -76,7 +76,7 @@ export default function ProductosClient({
   async function toggleDisponible(producto: Producto) {
     const nuevoEstado = !producto.disponible;
 
-    if (!nuevoEstado === false && plan === "basico") {
+    if (nuevoEstado && plan === "basico") {
       const activos = productos.filter((p) => p.disponible && p.id !== producto.id).length;
       if (activos >= limiteProductos) {
         toast.error(`Límite del plan básico: ${limiteProductos} productos`);
@@ -84,25 +84,26 @@ export default function ProductosClient({
       }
     }
 
-    const { error } = await supabase
-      .from("productos")
-      .update({ disponible: nuevoEstado })
-      .eq("id", producto.id);
-
-    if (error) { toast.error("Error al actualizar"); return; }
-
-    setProductos((prev) =>
-      prev.map((p) => (p.id === producto.id ? { ...p, disponible: nuevoEstado } : p))
-    );
-    toast.success(nuevoEstado ? "Producto activado" : "Producto desactivado");
+    try {
+      await updateDoc(doc(db, "productos", producto.id), { disponible: nuevoEstado });
+      setProductos((prev) =>
+        prev.map((p) => (p.id === producto.id ? { ...p, disponible: nuevoEstado } : p))
+      );
+      toast.success(nuevoEstado ? "Producto activado" : "Producto desactivado");
+    } catch {
+      toast.error("Error al actualizar");
+    }
   }
 
   async function eliminar(id: string) {
     if (!confirm("¿Eliminar este producto?")) return;
-    const { error } = await supabase.from("productos").delete().eq("id", id);
-    if (error) { toast.error("Error al eliminar"); return; }
-    setProductos((prev) => prev.filter((p) => p.id !== id));
-    toast.success("Producto eliminado");
+    try {
+      await deleteDoc(doc(db, "productos", id));
+      setProductos((prev) => prev.filter((p) => p.id !== id));
+      toast.success("Producto eliminado");
+    } catch {
+      toast.error("Error al eliminar");
+    }
   }
 
   function handleSaved(producto: Producto, isNew: boolean) {

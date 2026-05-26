@@ -7,7 +7,8 @@ import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 const schema = z.object({
   email: z.string().email("Email inválido"),
@@ -19,7 +20,6 @@ type Form = z.infer<typeof schema>;
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -29,16 +29,27 @@ export default function LoginPage() {
 
   async function onSubmit(data: Form) {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-    setLoading(false);
-    if (error) {
+    try {
+      const credential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const idToken = await credential.user.getIdToken();
+
+      const res = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!res.ok) {
+        toast.error("Email o contraseña incorrectos");
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch {
       toast.error("Email o contraseña incorrectos");
-      return;
+    } finally {
+      setLoading(false);
     }
-    router.push("/dashboard");
   }
 
   return (
