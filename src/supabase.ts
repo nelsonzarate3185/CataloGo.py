@@ -284,15 +284,13 @@ async function syncCollectionFromSupabase(collectionName: string) {
         return record;
       });
 
-      // Merge: prefer local writes for existing keys, add new server rows
+      // Merge: server data wins (role/status are admin-controlled),
+      // local-only rows (optimistic inserts not yet on server) are preserved.
       const local = getLocalCollection(collectionName);
       const mergedMap = new Map();
       local.forEach(item => mergedMap.set(item.id || item.uid, item));
       formatted.forEach((item: any) => {
-        const key = item.id || item.uid;
-        if (!mergedMap.has(key)) {
-          mergedMap.set(key, item);
-        }
+        mergedMap.set(item.id || item.uid, item); // server always overwrites
       });
 
       const finalData = Array.from(mergedMap.values());
