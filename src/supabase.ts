@@ -279,8 +279,15 @@ async function syncCollectionFromSupabase(collectionName: string) {
     if (!error && data) {
       const formatted = data.map((row: any) => {
         const record = row.data ? { id: row.id || row.uid, ...row.data } : row;
-        if (collectionName === 'users' && !record.uid) record.uid = row.id || row.uid;
-        if (collectionName !== 'users' && !record.id) record.id = row.id;
+        // Flat columns are authoritative for admin-controlled fields — override JSONB
+        if (collectionName === 'users') {
+          if (row.role)   record.role   = row.role;
+          if (row.status) record.status = row.status;
+          if (row.email)  record.email  = row.email;
+          if (!record.uid) record.uid = row.uid || row.id;
+        } else {
+          if (!record.id) record.id = row.id;
+        }
         return record;
       });
 
@@ -325,6 +332,7 @@ async function syncWriteToSupabase(collectionName: string, id: string, docData: 
         payload.slug = docData.slug || '';
         payload.business_name = docData.businessName || '';
         payload.role = docData.role || 'admin';
+        payload.status = docData.status || 'active';
       } else {
         payload.id = id;
         if (collectionName === 'products') {
