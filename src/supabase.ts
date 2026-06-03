@@ -278,15 +278,16 @@ async function syncCollectionFromSupabase(collectionName: string) {
     const { data, error } = await supabase.from(collectionName).select('*');
     if (!error && data) {
       const formatted = data.map((row: any) => {
-        const record = row.data ? { id: row.id || row.uid, ...row.data } : row;
-        // Flat columns are authoritative for admin-controlled fields — override JSONB
+        // Merge JSONB data first, then flat columns override (flat columns are authoritative)
+        const { data: jsonbData, ...flatCols } = row;
+        const record: any = jsonbData
+          ? { id: flatCols.id || flatCols.uid, ...jsonbData, ...flatCols }
+          : { ...flatCols };
+        delete record.data; // remove the jsonb wrapper key if it leaked
         if (collectionName === 'users') {
-          if (row.role)   record.role   = row.role;
-          if (row.status) record.status = row.status;
-          if (row.email)  record.email  = row.email;
-          if (!record.uid) record.uid = row.uid || row.id;
+          if (!record.uid) record.uid = flatCols.uid || flatCols.id;
         } else {
-          if (!record.id) record.id = row.id;
+          if (!record.id) record.id = flatCols.id;
         }
         return record;
       });
