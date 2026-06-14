@@ -1,12 +1,15 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 const schema = z.object({
   email: z.string().email("Email inválido"),
@@ -17,7 +20,6 @@ type Form = z.infer<typeof schema>;
 export default function RecuperarPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -27,15 +29,14 @@ export default function RecuperarPage() {
 
   async function onSubmit(data: Form) {
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/api/auth/callback?next=/actualizar-password`,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await sendPasswordResetEmail(auth, data.email);
+      setSent(true);
+    } catch {
+      toast.error("No se pudo enviar el email. Verificá la dirección.");
+    } finally {
+      setLoading(false);
     }
-    setSent(true);
   }
 
   if (sent) {

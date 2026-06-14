@@ -6,7 +6,11 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CataloGo — Catálogos digitales para tu negocio",
+  title: {
+    default: "CataloGo",
+    template: "%s | CataloGo",
+  },
+  applicationName: "CataloGo",
   description:
     "Crea tu catálogo digital, compartilo por WhatsApp y recibí pedidos organizados. Sin comisiones.",
 };

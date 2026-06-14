@@ -1,28 +1,22 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebase/admin";
 
-export async function middleware(request: NextRequest) {
+// Middleware runs in the Edge Runtime — no Node.js modules available here.
+// We only check for the session cookie's existence. Cryptographic verification
+// happens in getServerUser() (firebase-admin) on each protected page/route,
+// so a forged cookie is rejected before any data is accessed.
+export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isDashboard = pathname.startsWith("/dashboard");
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/registro");
+  const isAuthPage =
+    pathname.startsWith("/login") || pathname.startsWith("/registro");
 
-  const session = request.cookies.get("__session")?.value;
+  const hasSession = !!request.cookies.get("__session")?.value;
 
-  let uid: string | null = null;
-  if (session) {
-    try {
-      const decoded = await adminAuth.verifySessionCookie(session, true);
-      uid = decoded.uid;
-    } catch {
-      uid = null;
-    }
-  }
-
-  if (isDashboard && !uid) {
+  if (isDashboard && !hasSession) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (isAuthPage && uid) {
+  if (isAuthPage && hasSession) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

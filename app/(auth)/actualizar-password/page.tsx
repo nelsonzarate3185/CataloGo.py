@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useState, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { verifyPasswordResetCode, confirmPasswordReset } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 const schema = z
   .object({
@@ -20,10 +24,11 @@ const schema = z
 
 type Form = z.infer<typeof schema>;
 
-export default function ActualizarPasswordPage() {
+function ActualizarPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const oobCode = searchParams.get("oobCode");
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -32,17 +37,36 @@ export default function ActualizarPasswordPage() {
   } = useForm<Form>({ resolver: zodResolver(schema) });
 
   async function onSubmit(data: Form) {
-    setLoading(true);
-    const { error } = await supabase.auth.updateUser({
-      password: data.password,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
+    if (!oobCode) {
+      toast.error("Enlace inválido o expirado. Solicitá uno nuevo.");
       return;
     }
-    toast.success("Contraseña actualizada correctamente");
-    router.push("/dashboard");
+    setLoading(true);
+    try {
+      await verifyPasswordResetCode(auth, oobCode);
+      await confirmPasswordReset(auth, oobCode, data.password);
+      toast.success("Contraseña actualizada correctamente");
+      router.push("/login");
+    } catch {
+      toast.error("El enlace expiró o es inválido. Solicitá uno nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!oobCode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md bg-white rounded-xl border p-8 shadow-sm text-center">
+          <p className="text-gray-500 text-sm mb-4">
+            Enlace inválido o expirado.
+          </p>
+          <Link href="/recuperar" className="text-primary text-sm font-medium">
+            Solicitá un nuevo link
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -82,5 +106,13 @@ export default function ActualizarPasswordPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ActualizarPasswordPage() {
+  return (
+    <Suspense>
+      <ActualizarPasswordForm />
+    </Suspense>
   );
 }

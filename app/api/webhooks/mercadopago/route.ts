@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import { adminDb } from "@/lib/firebase/admin";
 
 interface MPWebhookPayload {
   type: string;
@@ -9,14 +8,9 @@ interface MPWebhookPayload {
 }
 
 export async function POST(request: NextRequest) {
-  const supabaseAdmin = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
   try {
     const body: MPWebhookPayload = await request.json();
 
-    // Solo procesar eventos de suscripciones
     if (body.type !== "subscription_preapproval") {
       return NextResponse.json({ ok: true });
     }
@@ -26,7 +20,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "id requerido" }, { status: 400 });
     }
 
-    // Consultar estado en MercadoPago
     const mpRes = await fetch(
       `https://api.mercadopago.com/preapproval/${subscriptionId}`,
       {
@@ -40,7 +33,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "MP error" }, { status: 502 });
     }
 
-    const subscription = await mpRes.json() as {
+    const subscription = (await mpRes.json()) as {
       status: string;
       external_reference: string;
       reason: string;
@@ -49,7 +42,7 @@ export async function POST(request: NextRequest) {
     };
 
     const comercioId = subscription.external_reference;
-    const mpStatus = subscription.status; // authorized, paused, cancelled
+    const mpStatus = subscription.status;
     const planNombre = subscription.reason?.toLowerCase().includes("pro")
       ? "pro"
       : subscription.reason?.toLowerCase().includes("business")
@@ -57,32 +50,52 @@ export async function POST(request: NextRequest) {
         : "basico";
 
     if (mpStatus === "authorized") {
-      // Activar plan
-      await supabaseAdmin.from("comercios").update({
+      await adminDb.collection("comercios").doc(comercioId).update({
         plan: planNombre,
         plan_expira_at: subscription.next_payment_date ?? null,
-      }).eq("id", comercioId);
+        updated_at: new Date().toISOString(),
+      });
 
-      await supabaseAdmin.from("suscripciones").upsert(
-        {
-          comercio_id: comercioId,
-          plan: planNombre,
-          estado: "activo",
-          mp_subscription_id: subscriptionId,
-          expira_at: subscription.next_payment_date ?? null,
-        },
-        { onConflict: "mp_subscription_id" }
-      );
+      const snap = await adminDb
+        .collection("suscripciones")
+        .where("mp_subscription_id", "==", subscriptionId)
+        .limit(1)
+        .get();
+
+      const suscripcionData = {
+        comercio_id: comercioId,
+        plan: planNombre,
+        estado: "activo",
+        mp_subscription_id: subscriptionId,
+        expira_at: subscription.next_payment_date ?? null,
+      };
+
+      if (snap.empty) {
+        await adminDb.collection("suscripciones").add({
+          ...suscripcionData,
+          created_at: new Date().toISOString(),
+        });
+      } else {
+        await snap.docs[0].ref.update(suscripcionData);
+      }
     } else if (mpStatus === "cancelled" || mpStatus === "paused") {
-      // Desactivar plan → volver a básico
-      await supabaseAdmin.from("comercios").update({
+      await adminDb.collection("comercios").doc(comercioId).update({
         plan: "basico",
         plan_expira_at: null,
-      }).eq("id", comercioId);
+        updated_at: new Date().toISOString(),
+      });
 
-      await supabaseAdmin.from("suscripciones")
-        .update({ estado: mpStatus === "cancelled" ? "cancelado" : "vencido" })
-        .eq("mp_subscription_id", subscriptionId);
+      const snap = await adminDb
+        .collection("suscripciones")
+        .where("mp_subscription_id", "==", subscriptionId)
+        .limit(1)
+        .get();
+
+      if (!snap.empty) {
+        await snap.docs[0].ref.update({
+          estado: mpStatus === "cancelled" ? "cancelado" : "vencido",
+        });
+      }
     }
 
     return NextResponse.json({ ok: true });

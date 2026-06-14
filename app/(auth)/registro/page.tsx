@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +9,9 @@ import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { collection, addDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase/client";
 import { slugify } from "@/lib/utils";
 
 const schema = z
@@ -30,7 +34,6 @@ type Form = z.infer<typeof schema>;
 export default function RegistroPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -41,68 +44,64 @@ export default function RegistroPage() {
   async function onSubmit(data: Form) {
     setLoading(true);
     try {
-      // 1. Crear usuario en Supabase Auth
-      const { data: authData, error: authError } =
-        await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: { data: { nombre: data.nombre } },
-        });
+      // 1. Crear usuario en Firebase Auth
+      const credential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
 
-      if (authError || !authData.user) {
-        toast.error(authError?.message ?? "Error al crear la cuenta");
+      // 2. Crear sesión en el servidor (cookie __session)
+      const idToken = await credential.user.getIdToken();
+      const res = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!res.ok) {
+        toast.error("Error al iniciar sesión");
         return;
       }
 
-      // Establecer sesión explícitamente antes de queries a la DB
-      if (authData.session) {
-        await supabase.auth.setSession({
-          access_token: authData.session.access_token,
-          refresh_token: authData.session.refresh_token,
-        });
-      } else {
-        toast.error("Activá la confirmación de email deshabilitada en Supabase Auth.");
-        return;
-      }
-
-      // 2. Generar slug único con sufijo random para evitar colisiones
+      // 3. Crear comercio y catálogo en Firestore
+      const now = new Date().toISOString();
       const suffix = Math.random().toString(36).slice(2, 6);
       const slug = `${slugify(data.nombre)}-${suffix}`;
 
-      // 3. Crear registro en comercios
-      const { error: comercioError } = await supabase
-        .from("comercios")
-        .insert({
-          user_id: authData.user.id,
-          nombre: data.nombre,
-          slug,
-          whatsapp: data.whatsapp,
-          plan: "basico",
-          activo: true,
-        });
+      const comercioRef = await addDoc(collection(db, "comercios"), {
+        user_id: credential.user.uid,
+        nombre: data.nombre,
+        slug,
+        whatsapp: data.whatsapp,
+        plan: "basico",
+        activo: true,
+        descripcion: null,
+        logo_url: null,
+        rubro: null,
+        plan_expira_at: null,
+        created_at: now,
+        updated_at: now,
+      });
 
-      if (comercioError) {
-        toast.error("Error al crear el comercio: " + comercioError.message);
-        return;
-      }
+      await addDoc(collection(db, "catalogos"), {
+        comercio_id: comercioRef.id,
+        nombre: "Mi catálogo",
+        activo: true,
+        descripcion: null,
+        created_at: now,
+        updated_at: now,
+      });
 
-      // 4. Crear catálogo por defecto
-      const { data: comercioData } = await supabase
-        .from("comercios")
-        .select("id")
-        .eq("user_id", authData.user.id)
-        .single();
-
-      if (comercioData) {
-        await supabase.from("catalogos").insert({
-          comercio_id: comercioData.id,
-          nombre: "Mi catálogo",
-          activo: true,
-        });
-      }
-
-      toast.success("¡Cuenta creada! Revisá tu email para confirmar.");
+      toast.success("¡Cuenta creada!");
       router.push("/dashboard");
+    } catch (error: unknown) {
+      const code = (error as { code?: string }).code;
+      if (code === "auth/email-already-in-use") {
+        toast.error("Este email ya está registrado");
+      } else {
+        toast.error("Error al crear la cuenta");
+      }
     } finally {
       setLoading(false);
     }
