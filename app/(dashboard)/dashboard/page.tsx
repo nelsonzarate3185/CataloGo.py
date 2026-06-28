@@ -51,7 +51,7 @@ export default async function DashboardPage() {
       .gte("created_at", hoy),
     supabase
       .from("pedidos")
-      .select("id, created_at, total, customer_name, status")
+      .select("id, created_at, total, nombre_cliente")
       .eq("comercio_id", comercio.id)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -231,7 +231,7 @@ export default async function DashboardPage() {
                 >
                   <div>
                     <p className="text-[14px] font-bold text-foreground">
-                      {pedido.customer_name ?? "Cliente"}
+                      {pedido.nombre_cliente ?? "Cliente"}
                     </p>
                     <p className="text-[12.5px] text-muted-foreground">
                       {new Date(pedido.created_at).toLocaleDateString("es-PY")}
@@ -241,7 +241,6 @@ export default async function DashboardPage() {
                     <p className="text-[14px] font-bold">
                       {pedido.total ? formatGS(pedido.total) : "—"}
                     </p>
-                    <StatusBadge status={pedido.status} />
                   </div>
                 </div>
               ))}
@@ -259,21 +258,3 @@ export default async function DashboardPage() {
   );
 }
 
-function StatusBadge({ status }: { status: string | null }) {
-  const map: Record<string, { label: string; bg: string; color: string }> = {
-    nuevo: { label: "Nuevo", bg: "#e7f4ec", color: "#1f8a52" },
-    en_proceso: { label: "En proceso", bg: "#fff7e6", color: "#c77d18" },
-    enviado: { label: "Enviado", bg: "#e8f0fb", color: "#1a73c7" },
-    entregado: { label: "Entregado", bg: "#e7f4ec", color: "#1f8a52" },
-    cancelado: { label: "Cancelado", bg: "#fbe9ec", color: "#c4314b" },
-  };
-  const s = map[status ?? "nuevo"] ?? map.nuevo;
-  return (
-    <span
-      className="text-[11.5px] font-bold px-2 py-0.5 rounded-full"
-      style={{ background: s.bg, color: s.color }}
-    >
-      {s.label}
-    </span>
-  );
-}
