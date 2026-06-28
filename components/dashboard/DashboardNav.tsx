@@ -13,8 +13,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard, exact: true },
@@ -33,10 +32,10 @@ interface Props {
 export default function DashboardNav({ comercioNombre, comercioSlug }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = createClient();
 
   async function handleLogout() {
-    await fetch("/api/auth/session", { method: "DELETE" });
-    await signOut(auth);
+    await supabase.auth.signOut();
     router.push("/login");
   }
 

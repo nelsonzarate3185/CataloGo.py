@@ -1,19 +1,19 @@
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getServerUser, adminDb, fromDoc } from "@/lib/firebase/admin";
-import type { Comercio } from "@/types/database";
 import ConfiguracionClient from "@/components/dashboard/configuracion/ConfiguracionClient";
 
 export default async function ConfiguracionPage() {
-  const user = await getServerUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const comercioSnap = await adminDb
-    .collection("comercios")
-    .where("user_id", "==", user.uid)
-    .limit(1)
-    .get();
-
-  const comercio = comercioSnap.empty ? null : fromDoc<Comercio>(comercioSnap.docs[0]);
+  const { data: comercio } = await supabase
+    .from("comercios")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
   if (!comercio) redirect("/registro");
 
   return (

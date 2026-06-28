@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,8 +7,7 @@ import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { createClient } from "@/lib/supabase/client";
 
 const schema = z.object({
   email: z.string().email("Email inválido"),
@@ -23,6 +20,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const supabase = createClient();
 
   const {
     register,
@@ -32,56 +30,31 @@ export default function LoginPage() {
 
   async function onSubmit(data: Form) {
     setLoading(true);
-    try {
-      const credential = await signInWithEmailAndPassword(auth, data.email, data.password);
-      const idToken = await credential.user.getIdToken();
-
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!res.ok) {
-        toast.error("Email o contraseña incorrectos");
-        return;
-      }
-
-      router.push("/dashboard");
-    } catch {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    setLoading(false);
+    if (error) {
       toast.error("Email o contraseña incorrectos");
-    } finally {
-      setLoading(false);
+      return;
     }
+    router.push("/dashboard");
   }
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      const credential = await signInWithPopup(auth, provider);
-      const idToken = await credential.user.getIdToken();
-
-      const res = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!res.ok) {
-        toast.error("Error al iniciar sesión con Google");
-        return;
-      }
-
-      router.push("/dashboard");
-    } catch (error: unknown) {
-      const code = (error as { code?: string }).code;
-      if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
-        toast.error("Error al iniciar sesión con Google");
-      }
-    } finally {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+    if (error) {
+      toast.error("Error al iniciar sesión con Google");
       setGoogleLoading(false);
     }
+    // Si no hay error, Supabase redirige a Google; no hay que limpiar el estado
   }
 
   const isDisabled = loading || googleLoading;
@@ -114,7 +87,7 @@ export default function LoginPage() {
             <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
             <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
           </svg>
-          {googleLoading ? "Ingresando..." : "Ingresar con Google"}
+          {googleLoading ? "Redirigiendo..." : "Ingresar con Google"}
         </button>
 
         <div className="relative mb-4">

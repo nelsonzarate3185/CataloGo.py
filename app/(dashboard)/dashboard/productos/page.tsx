@@ -1,50 +1,43 @@
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
-import { getServerUser, adminDb, fromDoc, fromDocs } from "@/lib/firebase/admin";
 import { PLAN_LIMITES } from "@/types/database";
-import type { Comercio, Producto, Catalogo, Categoria } from "@/types/database";
 import ProductosClient from "@/components/dashboard/productos/ProductosClient";
 
 export default async function ProductosPage() {
-  const user = await getServerUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const comercioSnap = await adminDb
-    .collection("comercios")
-    .where("user_id", "==", user.uid)
-    .limit(1)
-    .get();
-
-  const comercio = comercioSnap.empty ? null : fromDoc<Comercio>(comercioSnap.docs[0]);
+  const { data: comercio } = await supabase
+    .from("comercios")
+    .select("id, plan")
+    .eq("user_id", user.id)
+    .single();
   if (!comercio) redirect("/registro");
 
-  const [productosSnap, catalogosSnap] = await Promise.all([
-    adminDb
-      .collection("productos")
-      .where("comercio_id", "==", comercio.id)
-      .orderBy("orden", "asc")
-      .get(),
-    adminDb
-      .collection("catalogos")
-      .where("comercio_id", "==", comercio.id)
-      .where("activo", "==", true)
-      .get(),
+  const [productosRes, catalogosRes, categoriasRes] = await Promise.all([
+    supabase
+      .from("productos")
+      .select("*")
+      .eq("comercio_id", comercio.id)
+      .order("orden", { ascending: true }),
+    supabase
+      .from("catalogos")
+      .select("id, nombre")
+      .eq("comercio_id", comercio.id)
+      .eq("activo", true),
+    supabase
+      .from("categorias")
+      .select("*")
+      .order("orden", { ascending: true }),
   ]);
 
-  const productos = fromDocs<Producto>(productosSnap);
-  const catalogos = fromDocs<Catalogo>(catalogosSnap);
-
-  let categorias: Categoria[] = [];
-  if (catalogos.length > 0) {
-    const catalogoIds = catalogos.map((c) => c.id);
-    const categoriasSnap = await adminDb
-      .collection("categorias")
-      .where("catalogo_id", "in", catalogoIds)
-      .orderBy("orden", "asc")
-      .get();
-    categorias = fromDocs<Categoria>(categoriasSnap);
-  }
-
+  const productos = productosRes.data ?? [];
+  const catalogos = catalogosRes.data ?? [];
+  const categorias = categoriasRes.data ?? [];
   const limite = PLAN_LIMITES[comercio.plan].productos;
   const totalActivos = productos.filter((p) => p.disponible).length;
 
@@ -55,7 +48,7 @@ export default async function ProductosPage() {
           <h1 className="text-2xl font-bold text-gray-900">Productos</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {productos.length} producto{productos.length !== 1 ? "s" : ""}
-            {limite !== Number.MAX_SAFE_INTEGER && ` · límite: ${limite}`}
+            {limite !== Infinity && ` · límite: ${limite}`}
           </p>
         </div>
       </div>

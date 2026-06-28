@@ -1,21 +1,21 @@
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getServerUser, adminDb, fromDoc } from "@/lib/firebase/admin";
 import QRClient from "@/components/dashboard/qr/QRClient";
-import type { Comercio } from "@/types/database";
 
 export default async function QRPage() {
-  const user = await getServerUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const snap = await adminDb
-    .collection("comercios")
-    .where("user_id", "==", user.uid)
-    .limit(1)
-    .get();
+  const { data: comercio } = await supabase
+    .from("comercios")
+    .select("id, nombre, slug")
+    .eq("user_id", user.id)
+    .single();
+  if (!comercio) redirect("/registro");
 
-  if (snap.empty) redirect("/registro");
-
-  const comercio = fromDoc<Comercio>(snap.docs[0])!;
   const catalogoUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${comercio.slug}`;
 
   return (

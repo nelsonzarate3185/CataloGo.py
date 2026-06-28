@@ -7,10 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Upload } from "lucide-react";
-import { doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { updatePassword } from "firebase/auth";
-import { db, storage, auth } from "@/lib/firebase/client";
+import { createClient } from "@/lib/supabase/client";
 import type { Comercio } from "@/types/database";
 
 const perfilSchema = z.object({
@@ -68,7 +65,10 @@ interface Props {
 }
 
 export default function ConfiguracionClient({ comercio, userEmail }: Props) {
-  const [logoPreview, setLogoPreview] = useState<string | null>(comercio.logo_url);
+  const supabase = createClient();
+  const [logoPreview, setLogoPreview] = useState<string | null>(
+    comercio.logo_url
+  );
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loadingPerfil, setLoadingPerfil] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
@@ -106,23 +106,33 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
 
       if (logoFile) {
         const ext = logoFile.name.split(".").pop();
-        const storageRef = ref(storage, `logos/${comercio.id}/logo.${ext}`);
-        const snapshot = await uploadBytes(storageRef, logoFile);
-        logo_url = await getDownloadURL(snapshot.ref);
+        const path = `${comercio.id}/logo.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("logos")
+          .upload(path, logoFile, { upsert: true });
+        if (uploadError) {
+          toast.error("Error al subir el logo");
+          return;
+        }
+        const { data: urlData } = supabase.storage
+          .from("logos")
+          .getPublicUrl(path);
+        logo_url = urlData.publicUrl;
       }
 
-      await updateDoc(doc(db, "comercios", comercio.id), {
-        nombre: data.nombre,
-        descripcion: data.descripcion || null,
-        whatsapp: data.whatsapp,
-        rubro: data.rubro || null,
-        logo_url,
-        updated_at: new Date().toISOString(),
-      });
+      const { error } = await supabase
+        .from("comercios")
+        .update({
+          nombre: data.nombre,
+          descripcion: data.descripcion || null,
+          whatsapp: data.whatsapp,
+          rubro: data.rubro || null,
+          logo_url,
+        })
+        .eq("id", comercio.id);
 
+      if (error) { toast.error("Error al guardar"); return; }
       toast.success("Perfil actualizado");
-    } catch {
-      toast.error("Error al guardar");
     } finally {
       setLoadingPerfil(false);
     }
@@ -130,27 +140,20 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
 
   async function onSubmitPassword(data: PasswordForm) {
     setLoadingPassword(true);
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        toast.error("Sesión expirada, volvé a iniciar sesión");
-        return;
-      }
-      await updatePassword(user, data.password);
-      toast.success("Contraseña actualizada");
-      passwordForm.reset();
-    } catch {
-      toast.error("Error al cambiar la contraseña. Volvé a iniciar sesión e intentá de nuevo.");
-    } finally {
-      setLoadingPassword(false);
-    }
+    const { error } = await supabase.auth.updateUser({ password: data.password });
+    setLoadingPassword(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Contraseña actualizada");
+    passwordForm.reset();
   }
 
   return (
     <div className="space-y-8 max-w-lg">
+      {/* Perfil */}
       <section className="bg-white rounded-xl border p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Datos del negocio</h2>
 
+        {/* Logo */}
         <div className="flex items-center gap-4 mb-6">
           <div
             onClick={() => fileRef.current?.click()}
@@ -198,7 +201,9 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
             { name: "whatsapp" as const, label: "WhatsApp (9 dígitos sin 0)", type: "tel" },
           ].map(({ name, label, type }) => (
             <div key={name}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {label}
+              </label>
               <input
                 {...perfilForm.register(name)}
                 type={type}
@@ -213,20 +218,26 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
           ))}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rubro</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Rubro
+            </label>
             <select
               {...perfilForm.register("rubro")}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Seleccioná un rubro</option>
               {RUBROS.map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>
+                  {r}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Descripción
+            </label>
             <textarea
               {...perfilForm.register("descripcion")}
               rows={3}
@@ -245,9 +256,13 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
         </form>
       </section>
 
+      {/* Cambiar contraseña */}
       <section className="bg-white rounded-xl border p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Cambiar contraseña</h2>
-        <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="space-y-4">
+        <form
+          onSubmit={passwordForm.handleSubmit(onSubmitPassword)}
+          className="space-y-4"
+        >
           {(["password", "confirmPassword"] as const).map((name) => (
             <div key={name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -276,6 +291,7 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
         </form>
       </section>
 
+      {/* Plan */}
       <section id="plan" className="bg-white rounded-xl border p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Plan actual</h2>
         <div className="space-y-3">
@@ -301,7 +317,9 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">{plan.descripcion}</p>
                   </div>
-                  <p className="text-sm font-bold text-primary shrink-0 ml-4">{plan.precio}</p>
+                  <p className="text-sm font-bold text-primary shrink-0 ml-4">
+                    {plan.precio}
+                  </p>
                 </div>
                 {comercio.plan !== key && key !== "basico" && (
                   <button className="mt-3 w-full py-2 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary/90">

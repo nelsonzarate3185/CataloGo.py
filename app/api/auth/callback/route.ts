@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-// Firebase password reset redirects here after the user clicks the email link.
-// Firebase appends ?mode=resetPassword&oobCode=... — we forward those to the UI page.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const oobCode = searchParams.get("oobCode");
-  const mode = searchParams.get("mode");
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/dashboard";
 
-  if (mode === "resetPassword" && oobCode) {
-    return NextResponse.redirect(
-      `${origin}/actualizar-password?oobCode=${oobCode}`
-    );
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
   }
 
-  return NextResponse.redirect(`${origin}/login`);
+  return NextResponse.redirect(`${origin}/login?error=link_invalido`);
 }

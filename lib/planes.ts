@@ -1,39 +1,51 @@
-import { adminDb } from "@/lib/firebase/admin";
-import type { PlanTipo } from "@/types/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, PlanTipo } from "@/types/database";
 import { PLAN_LIMITES } from "@/types/database";
 
+interface CheckProductoLimitArgs {
+  supabase: SupabaseClient<Database>;
+  comercioId: string;
+  plan: PlanTipo;
+}
+
 /** Devuelve true si el comercio puede agregar un producto más */
-export async function puedeAgregarProducto(
-  comercioId: string,
-  plan: PlanTipo
-): Promise<boolean> {
+export async function puedeAgregarProducto({
+  supabase,
+  comercioId,
+  plan,
+}: CheckProductoLimitArgs): Promise<boolean> {
   const limite = PLAN_LIMITES[plan].productos;
-  if (limite === Number.MAX_SAFE_INTEGER) return true;
+  if (limite === Infinity) return true;
 
-  const snap = await adminDb
-    .collection("productos")
-    .where("comercio_id", "==", comercioId)
-    .where("disponible", "==", true)
-    .count()
-    .get();
+  const { count } = await supabase
+    .from("productos")
+    .select("id", { count: "exact", head: true })
+    .eq("comercio_id", comercioId)
+    .eq("disponible", true);
 
-  return snap.data().count < limite;
+  return (count ?? 0) < limite;
+}
+
+interface CheckCatalogoLimitArgs {
+  supabase: SupabaseClient<Database>;
+  comercioId: string;
+  plan: PlanTipo;
 }
 
 /** Devuelve true si el comercio puede crear otro catálogo */
-export async function puedeAgregarCatalogo(
-  comercioId: string,
-  plan: PlanTipo
-): Promise<boolean> {
+export async function puedeAgregarCatalogo({
+  supabase,
+  comercioId,
+  plan,
+}: CheckCatalogoLimitArgs): Promise<boolean> {
   const limite = PLAN_LIMITES[plan].catalogos;
-  if (limite === Number.MAX_SAFE_INTEGER) return true;
+  if (limite === Infinity) return true;
 
-  const snap = await adminDb
-    .collection("catalogos")
-    .where("comercio_id", "==", comercioId)
-    .where("activo", "==", true)
-    .count()
-    .get();
+  const { count } = await supabase
+    .from("catalogos")
+    .select("id", { count: "exact", head: true })
+    .eq("comercio_id", comercioId)
+    .eq("activo", true);
 
-  return snap.data().count < limite;
+  return (count ?? 0) < limite;
 }

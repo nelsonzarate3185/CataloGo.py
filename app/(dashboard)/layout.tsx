@@ -1,23 +1,26 @@
 import { redirect } from "next/navigation";
-import { getServerUser, adminDb, fromDoc } from "@/lib/firebase/admin";
+import { createClient } from "@/lib/supabase/server";
 import DashboardNav from "@/components/dashboard/DashboardNav";
-import type { Comercio } from "@/types/database";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getServerUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) redirect("/login");
 
-  const snapshot = await adminDb
-    .collection("comercios")
-    .where("user_id", "==", user.uid)
-    .limit(1)
-    .get();
+  // Verificar que tenga comercio creado
+  const { data: comercio } = await supabase
+    .from("comercios")
+    .select("id, nombre, slug, plan")
+    .eq("user_id", user.id)
+    .single();
 
-  const comercio = snapshot.empty ? null : fromDoc<Comercio>(snapshot.docs[0]);
   if (!comercio) redirect("/registro");
 
   return (

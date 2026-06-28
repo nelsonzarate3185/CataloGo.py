@@ -1,53 +1,54 @@
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
-import { getServerUser, adminDb, fromDoc, fromDocs } from "@/lib/firebase/admin";
+import { Copy, AlertTriangle } from "lucide-react";
 import CopyLinkButton from "@/components/dashboard/CopyLinkButton";
 import { PLAN_LIMITES } from "@/types/database";
-import type { Comercio, Catalogo, Producto, Pedido } from "@/types/database";
 
 export default async function DashboardPage() {
-  const user = await getServerUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const comercioSnap = await adminDb
-    .collection("comercios")
-    .where("user_id", "==", user.uid)
-    .limit(1)
-    .get();
+  const { data: comercio } = await supabase
+    .from("comercios")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
 
-  const comercio = comercioSnap.empty ? null : fromDoc<Comercio>(comercioSnap.docs[0]);
   if (!comercio) redirect("/registro");
 
-  const ahora = new Date();
-  const hace30Dias = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const { data: catalogo } = await supabase
+    .from("catalogos")
+    .select("id")
+    .eq("comercio_id", comercio.id)
+    .eq("activo", true)
+    .limit(1)
+    .single();
 
-  const [catalogoSnap, productosSnap, pedidosSnap] = await Promise.all([
-    adminDb
-      .collection("catalogos")
-      .where("comercio_id", "==", comercio.id)
-      .where("activo", "==", true)
-      .limit(1)
-      .get(),
-    adminDb
-      .collection("productos")
-      .where("comercio_id", "==", comercio.id)
-      .where("disponible", "==", true)
-      .get(),
-    adminDb
-      .collection("pedidos")
-      .where("comercio_id", "==", comercio.id)
-      .where("created_at", ">=", hace30Dias.toISOString())
-      .get(),
+  const ahora = new Date();
+  const hace30Dias = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [productosRes, pedidosRes] = await Promise.all([
+    supabase
+      .from("productos")
+      .select("id", { count: "exact", head: true })
+      .eq("comercio_id", comercio.id)
+      .eq("disponible", true),
+    supabase
+      .from("pedidos")
+      .select("id", { count: "exact", head: true })
+      .eq("comercio_id", comercio.id)
+      .gte("created_at", hace30Dias),
   ]);
 
-  const catalogo = catalogoSnap.empty ? null : fromDoc<Catalogo>(catalogoSnap.docs[0]);
-  const totalProductos = productosSnap.size;
-  const totalPedidos = pedidosSnap.size;
-
+  const totalProductos = productosRes.count ?? 0;
+  const totalPedidos = pedidosRes.count ?? 0;
   const limiteProductos = PLAN_LIMITES[comercio.plan].productos;
   const porcentajeUso =
-    limiteProductos === Number.MAX_SAFE_INTEGER ? 0 : (totalProductos / limiteProductos) * 100;
+    limiteProductos === Infinity ? 0 : (totalProductos / limiteProductos) * 100;
   const catalogoUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${comercio.slug}`;
 
   return (
@@ -62,6 +63,7 @@ export default async function DashboardPage() {
         </span>
       </p>
 
+      {/* Banner upgrade si plan básico y cerca del límite */}
       {comercio.plan === "basico" && porcentajeUso >= 80 && (
         <div className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
           <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
@@ -82,6 +84,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard label="Productos activos" value={totalProductos} href="/dashboard/productos" />
         <StatCard label="Pedidos (30 días)" value={totalPedidos} href="/dashboard/pedidos" />
@@ -90,7 +93,7 @@ export default async function DashboardPage() {
           <p className="text-2xl font-bold text-gray-900 capitalize">
             {comercio.plan}
           </p>
-          {limiteProductos !== Number.MAX_SAFE_INTEGER && (
+          {limiteProductos !== Infinity && (
             <div className="mt-2">
               <div className="flex justify-between text-xs text-gray-400 mb-1">
                 <span>{totalProductos} productos</span>
@@ -107,6 +110,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Link del catálogo */}
       <div className="bg-white rounded-xl border p-5">
         <p className="text-sm font-semibold text-gray-700 mb-3">
           Link de tu catálogo

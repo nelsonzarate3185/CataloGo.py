@@ -7,15 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { X, Upload } from "lucide-react";
 import Image from "next/image";
-import {
-  collection,
-  addDoc,
-  doc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase/client";
+import { createClient } from "@/lib/supabase/client";
 import { formatGS } from "@/lib/utils";
 import type { Producto, Catalogo, Categoria } from "@/types/database";
 
@@ -40,7 +32,7 @@ interface Props {
   onSaved: (producto: Producto, isNew: boolean) => void;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function ProductoModal({
@@ -51,6 +43,7 @@ export default function ProductoModal({
   onClose,
   onSaved,
 }: Props) {
+  const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [imagenPreview, setImagenPreview] = useState<string | null>(
     producto?.imagen_url ?? null
@@ -100,80 +93,85 @@ export default function ProductoModal({
     if (!imagenFile) return producto?.imagen_url ?? null;
 
     const ext = imagenFile.name.split(".").pop();
-    const storageRef = ref(storage, `productos/${comercioId}/${productoId}.${ext}`);
+    const path = `${comercioId}/${productoId}.${ext}`;
 
-    try {
-      const snapshot = await uploadBytes(storageRef, imagenFile);
-      return await getDownloadURL(snapshot.ref);
-    } catch {
-      toast.error("Error al subir la imagen");
+    const { error } = await supabase.storage
+      .from("productos")
+      .upload(path, imagenFile, { upsert: true });
+
+    if (error) {
+      toast.error("Error al subir la imagen: " + error.message);
       return null;
     }
+
+    const { data } = supabase.storage.from("productos").getPublicUrl(path);
+    return data.publicUrl;
   }
 
   async function onSubmit(data: Form) {
     setLoading(true);
     try {
       const isNew = !producto;
-      const now = new Date().toISOString();
 
       if (isNew) {
-        const docRef = await addDoc(collection(db, "productos"), {
-          comercio_id: comercioId,
-          catalogo_id: data.catalogo_id,
-          categoria_id: data.categoria_id || null,
-          nombre: data.nombre,
-          descripcion: data.descripcion || null,
-          precio: data.precio,
-          disponible: data.disponible,
-          destacado: data.destacado,
-          imagen_url: null,
-          orden: 0,
-          created_at: now,
-          updated_at: now,
-        });
+        // Crear primero para obtener el ID
+        const { data: created, error } = await supabase
+          .from("productos")
+          .insert({
+            comercio_id: comercioId,
+            catalogo_id: data.catalogo_id,
+            categoria_id: data.categoria_id || null,
+            nombre: data.nombre,
+            descripcion: data.descripcion || null,
+            precio: data.precio,
+            disponible: data.disponible,
+            destacado: data.destacado,
+          })
+          .select()
+          .single();
 
-        const imagen_url = await uploadImagen(docRef.id);
-        if (imagen_url) {
-          await updateDoc(docRef, { imagen_url });
+        if (error || !created) {
+          toast.error("Error al crear el producto");
+          return;
         }
 
-        const newProducto: Producto = {
-          id: docRef.id,
-          comercio_id: comercioId,
-          catalogo_id: data.catalogo_id,
-          categoria_id: data.categoria_id || null,
-          nombre: data.nombre,
-          descripcion: data.descripcion || null,
-          precio: data.precio,
-          disponible: data.disponible,
-          destacado: data.destacado,
-          imagen_url: imagen_url ?? null,
-          orden: 0,
-          created_at: now,
-          updated_at: now,
-        };
+        const imagen_url = await uploadImagen(created.id);
+
+        if (imagen_url && imagen_url !== created.imagen_url) {
+          await supabase
+            .from("productos")
+            .update({ imagen_url })
+            .eq("id", created.id);
+        }
 
         toast.success("Producto creado");
-        onSaved(newProducto, true);
+        onSaved({ ...created, imagen_url: imagen_url ?? created.imagen_url }, true);
       } else {
         const imagen_url = await uploadImagen(producto.id);
-        const updatedData = {
-          catalogo_id: data.catalogo_id,
-          categoria_id: data.categoria_id || null,
-          nombre: data.nombre,
-          descripcion: data.descripcion || null,
-          precio: data.precio,
-          disponible: data.disponible,
-          destacado: data.destacado,
-          imagen_url: imagen_url ?? producto.imagen_url,
-          updated_at: now,
-        };
 
-        await updateDoc(doc(db, "productos", producto.id), updatedData);
+        const { data: updated, error } = await supabase
+          .from("productos")
+          .update({
+            catalogo_id: data.catalogo_id,
+            categoria_id: data.categoria_id || null,
+            nombre: data.nombre,
+            descripcion: data.descripcion || null,
+            precio: data.precio,
+            disponible: data.disponible,
+            destacado: data.destacado,
+            imagen_url: imagen_url ?? producto.imagen_url,
+          })
+          .eq("id", producto.id)
+          .select()
+          .single();
+
+        if (error || !updated) {
+          toast.error("Error al actualizar el producto");
+          return;
+        }
 
         toast.success("Producto actualizado");
-        onSaved({ ...producto, ...updatedData }, false);
+        onSaved(updated, false);
       }
     } finally {
       setLoading(false);
@@ -193,6 +191,7 @@ export default function ProductoModal({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+          {/* Imagen */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Imagen del producto
@@ -203,7 +202,12 @@ export default function ProductoModal({
             >
               {imagenPreview ? (
                 <div className="relative h-40">
-                  <Image src={imagenPreview} alt="Preview" fill className="object-cover" />
+                  <Image
+                    src={imagenPreview}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                  />
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                     <Upload className="w-6 h-6 text-white" />
                   </div>
@@ -211,7 +215,9 @@ export default function ProductoModal({
               ) : (
                 <div className="h-32 flex flex-col items-center justify-center text-gray-400 gap-2">
                   <Upload className="w-6 h-6" />
-                  <p className="text-xs">JPG, PNG o WEBP · máx 10MB</p>
+                  <p className="text-xs">
+                    JPG, PNG o WEBP · máx 10MB
+                  </p>
                 </div>
               )}
             </div>
@@ -224,21 +230,29 @@ export default function ProductoModal({
             />
           </div>
 
+          {/* Catálogo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Catálogo *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Catálogo *
+            </label>
             <select
               {...register("catalogo_id")}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {catalogos.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
               ))}
             </select>
             {errors.catalogo_id && (
-              <p className="text-xs text-red-500 mt-1">{errors.catalogo_id.message}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {errors.catalogo_id.message}
+              </p>
             )}
           </div>
 
+          {/* Categoría */}
           {categoriasFiltradas.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -250,14 +264,19 @@ export default function ProductoModal({
               >
                 <option value="">Sin categoría</option>
                 {categoriasFiltradas.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
                 ))}
               </select>
             </div>
           )}
 
+          {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre *
+            </label>
             <input
               {...register("nombre")}
               type="text"
@@ -269,6 +288,7 @@ export default function ProductoModal({
             )}
           </div>
 
+          {/* Descripción */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Descripción (opcional)
@@ -281,8 +301,11 @@ export default function ProductoModal({
             />
           </div>
 
+          {/* Precio */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Precio (Gs.) *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Precio (Gs.) *
+            </label>
             <input
               {...register("precio")}
               type="number"
@@ -295,17 +318,28 @@ export default function ProductoModal({
               <p className="text-xs text-red-500 mt-1">{errors.precio.message}</p>
             )}
             {watch("precio") > 0 && (
-              <p className="text-xs text-gray-400 mt-1">{formatGS(watch("precio"))}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {formatGS(watch("precio"))}
+              </p>
             )}
           </div>
 
+          {/* Switches */}
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input {...register("disponible")} type="checkbox" className="w-4 h-4 accent-primary" />
+              <input
+                {...register("disponible")}
+                type="checkbox"
+                className="w-4 h-4 accent-primary"
+              />
               <span className="text-sm text-gray-700">Disponible</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input {...register("destacado")} type="checkbox" className="w-4 h-4 accent-primary" />
+              <input
+                {...register("destacado")}
+                type="checkbox"
+                className="w-4 h-4 accent-primary"
+              />
               <span className="text-sm text-gray-700">Destacado</span>
             </label>
           </div>

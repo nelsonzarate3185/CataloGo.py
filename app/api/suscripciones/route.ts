@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb, fromDoc } from "@/lib/firebase/admin";
-import type { Comercio, PlanTipo } from "@/types/database";
+import { createClient } from "@/lib/supabase/server";
+import type { PlanTipo } from "@/types/database";
 
 const PRECIOS_MP: Record<Exclude<PlanTipo, "basico">, { monto: number; nombre: string }> = {
   pro: { monto: 120000, nombre: "CataloGo Pro" },
@@ -8,16 +8,12 @@ const PRECIOS_MP: Record<Exclude<PlanTipo, "basico">, { monto: number; nombre: s
 };
 
 export async function POST(request: NextRequest) {
-  const session = request.cookies.get("__session")?.value;
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  let uid: string;
-  try {
-    const decoded = await adminAuth.verifySessionCookie(session, true);
-    uid = decoded.uid;
-  } catch {
+  if (!user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -27,17 +23,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "El plan básico es gratuito" }, { status: 400 });
   }
 
-  const comercioSnap = await adminDb
-    .collection("comercios")
-    .where("user_id", "==", uid)
-    .limit(1)
-    .get();
+  const { data: comercio } = await supabase
+    .from("comercios")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
 
-  if (comercioSnap.empty) {
+  if (!comercio) {
     return NextResponse.json({ error: "Comercio no encontrado" }, { status: 404 });
   }
 
-  const comercio = fromDoc<Comercio>(comercioSnap.docs[0])!;
   const precioInfo = PRECIOS_MP[plan as Exclude<PlanTipo, "basico">];
 
   const mpRes = await fetch("https://api.mercadopago.com/preapproval", {

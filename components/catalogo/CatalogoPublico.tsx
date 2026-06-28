@@ -5,8 +5,7 @@ import Image from "next/image";
 import { ShoppingCart, Plus, Minus, MessageCircle, Search, X } from "lucide-react";
 import { formatGS } from "@/lib/utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { createClient } from "@/lib/supabase/client";
 import type { CatalogoConRelaciones, PedidoItem } from "@/types/catalogo";
 import type { Producto } from "@/types/database";
 
@@ -19,6 +18,7 @@ export default function CatalogoPublico({
 }: {
   catalogo: CatalogoConRelaciones;
 }) {
+  const supabase = createClient();
   const [cart, setCart] = useState<CartState>({});
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
@@ -74,13 +74,12 @@ export default function CatalogoPublico({
     if (cartItems.length === 0) return;
     setEnviando(true);
 
-    // Registrar pedido en Firestore
-    await addDoc(collection(db, "pedidos"), {
+    // Registrar pedido en la base de datos
+    await supabase.from("pedidos").insert({
       comercio_id: comercio.id,
       catalogo_id: catalogo.id,
-      items: cartItems,
+      items: cartItems as any,
       total: totalPrecio,
-      created_at: new Date().toISOString(),
     });
 
     const url = buildWhatsAppUrl({
