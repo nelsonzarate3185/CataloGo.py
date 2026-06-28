@@ -7,8 +7,9 @@ import { type NextRequest, NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isDashboard = pathname.startsWith("/dashboard");
-  const isAuthPage =
-    pathname.startsWith("/login") || pathname.startsWith("/registro");
+  // /registro is intentionally excluded: an authenticated user without a comercio
+  // is redirected here by the dashboard layout and must be allowed through.
+  const isAuthPage = pathname.startsWith("/login");
 
   const hasSession = !!request.cookies.get("__session")?.value;
 
