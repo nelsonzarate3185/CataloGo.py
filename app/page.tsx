@@ -1,137 +1,212 @@
 import Link from "next/link";
-import { ArrowRight, QrCode, ShoppingCart, MessageCircle } from "lucide-react";
+import { ArrowRight, QrCode, ShoppingCart, MessageCircle, Star } from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-white">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b">
-        <span className="text-xl font-bold text-primary">CataloGo</span>
-        <div className="flex gap-3">
-          <Link
-            href="/login"
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-          >
-            Iniciar sesión
-          </Link>
-          <Link
-            href="/registro"
-            className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90"
-          >
-            Empezar gratis
-          </Link>
+    <div className="min-h-screen" style={{ background: "#e9ebe4" }}>
+
+      {/* Navbar */}
+      <nav style={{ background: "#0f1c2e" }}>
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-baseline gap-[2px]">
+            <span className="font-heading text-[22px] text-white">Catalo</span>
+            <span className="font-heading text-[22px] text-primary">Go</span>
+            <span className="text-[11px] text-[#8aa0b6] font-bold ml-1">.py</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="px-4 py-2 text-[13.5px] font-semibold text-[#c5d0db] hover:text-white transition-colors"
+            >
+              Iniciar sesión
+            </Link>
+            <Link
+              href="/registro"
+              className="px-4 py-2 text-[13.5px] font-extrabold rounded-[8px] transition-colors"
+              style={{ background: "#f6a623", color: "#1b2733" }}
+            >
+              Empezar gratis
+            </Link>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="px-6 py-20 text-center max-w-3xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-          Tu catálogo digital, listo en minutos
-        </h1>
-        <p className="text-lg text-gray-600 mb-8">
-          Mostrá tus productos con precios en guaraníes, compartí por link o QR
-          y recibí los pedidos directo en tu WhatsApp — sin comisiones.
-        </p>
-        <Link
-          href="/registro"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 text-lg"
+      <section className="max-w-6xl mx-auto px-6 pt-16 pb-14">
+        <div
+          className="relative rounded-[14px] overflow-hidden px-10 py-14"
+          style={{ background: "linear-gradient(120deg, #102b46 0%, #1c4b73 55%, #2d6da0 100%)" }}
         >
-          Crear mi catálogo gratis
-          <ArrowRight className="w-5 h-5" />
-        </Link>
-      </section>
-
-      {/* Features */}
-      <section className="px-6 py-16 bg-gray-50">
-        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
-          <div className="text-center p-6">
-            <ShoppingCart className="w-10 h-10 text-primary mx-auto mb-4" />
-            <h3 className="font-semibold text-gray-900 mb-2">
-              Catálogo organizado
-            </h3>
-            <p className="text-sm text-gray-600">
-              Productos con foto, precio en Gs. y categorías. Tus clientes
-              encuentran lo que buscan fácil.
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 14px, rgba(255,255,255,0) 14px 28px)",
+            }}
+          />
+          <div className="relative max-w-xl">
+            <div
+              className="inline-block px-3 py-1.5 rounded-full text-[12px] font-extrabold tracking-widest uppercase mb-5"
+              style={{ background: "#f6a623", color: "#1b2733" }}
+            >
+              Para emprendedores paraguayos
+            </div>
+            <h1 className="font-heading text-[40px] leading-[1.08] font-extrabold text-white mb-4">
+              Tu catálogo digital,<br />listo en minutos
+            </h1>
+            <p className="text-[16px] text-[#c5d6e6] mb-7 max-w-md">
+              Mostrá tus productos en guaraníes, compartí por link o QR y recibí los pedidos directo en tu WhatsApp — sin comisiones.
             </p>
-          </div>
-          <div className="text-center p-6">
-            <QrCode className="w-10 h-10 text-primary mx-auto mb-4" />
-            <h3 className="font-semibold text-gray-900 mb-2">
-              Link y QR listos
-            </h3>
-            <p className="text-sm text-gray-600">
-              Compartí tu catálogo por link o imprimí el código QR para tu
-              local.
-            </p>
-          </div>
-          <div className="text-center p-6">
-            <MessageCircle className="w-10 h-10 text-primary mx-auto mb-4" />
-            <h3 className="font-semibold text-gray-900 mb-2">
-              Pedidos por WhatsApp
-            </h3>
-            <p className="text-sm text-gray-600">
-              El cliente elige, presiona &quot;Pedir&quot; y te llega el pedido
-              formateado en WhatsApp.
-            </p>
+            <Link
+              href="/registro"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[10px] font-extrabold text-[15px] transition-opacity hover:opacity-90"
+              style={{ background: "#f6a623", color: "#1b2733" }}
+            >
+              Crear mi catálogo gratis
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="px-6 py-16 max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-          Planes simples, en guaraníes
-        </h2>
-        <div className="grid md:grid-cols-3 gap-6">
+      {/* Features */}
+      <section className="max-w-6xl mx-auto px-6 pb-14">
+        <div className="grid md:grid-cols-3 gap-4">
           {[
             {
-              name: "Básico",
-              price: "Gratis",
-              features: ["Hasta 30 productos", "1 catálogo", "Link y QR"],
+              icon: ShoppingCart,
+              title: "Catálogo organizado",
+              desc: "Productos con foto, precio en Gs. y categorías. Tus clientes encuentran lo que buscan fácil.",
+              bg: "#e7f4ec",
+              iconColor: "#1f8a52",
             },
             {
-              name: "Pro",
-              price: "Gs. 120.000/mes",
-              features: [
-                "Productos ilimitados",
-                "3 catálogos",
-                "Estadísticas",
-              ],
-              highlight: true,
+              icon: QrCode,
+              title: "Link y QR listos",
+              desc: "Compartí tu catálogo por link o imprimí el código QR para tu local o puesto.",
+              bg: "#e8f0fb",
+              iconColor: "#1a73c7",
             },
             {
-              name: "Business",
-              price: "Gs. 280.000/mes",
-              features: [
-                "Todo lo de Pro",
-                "Dominio propio",
-                "Sucursales ilimitadas",
-              ],
+              icon: MessageCircle,
+              title: "Pedidos por WhatsApp",
+              desc: "El cliente elige, presiona \"Pedir\" y te llega el pedido formateado en WhatsApp.",
+              bg: "#fff7e6",
+              iconColor: "#c77d18",
             },
-          ].map((plan) => (
+          ].map(({ icon: Icon, title, desc, bg, iconColor }) => (
             <div
-              key={plan.name}
-              className={`p-6 rounded-xl border-2 ${
-                plan.highlight
-                  ? "border-primary bg-primary/5"
-                  : "border-gray-200"
-              }`}
+              key={title}
+              className="bg-white rounded-[14px] p-6 shadow-card"
             >
-              <h3 className="font-bold text-lg text-gray-900">{plan.name}</h3>
-              <p className="text-2xl font-bold text-primary mt-2 mb-4">
-                {plan.price}
-              </p>
-              <ul className="space-y-2">
-                {plan.features.map((f) => (
-                  <li key={f} className="text-sm text-gray-600 flex gap-2">
-                    <span className="text-primary">✓</span> {f}
-                  </li>
-                ))}
-              </ul>
+              <div
+                className="w-12 h-12 rounded-[12px] flex items-center justify-center mb-4"
+                style={{ background: bg }}
+              >
+                <Icon className="w-6 h-6" style={{ color: iconColor }} />
+              </div>
+              <h3 className="font-heading text-[17px] font-extrabold text-foreground mb-2">{title}</h3>
+              <p className="text-[14px] text-muted-foreground leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>
       </section>
-    </main>
+
+      {/* Planes */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
+        <h2 className="font-heading text-[28px] font-extrabold text-center text-foreground mb-10">
+          Planes simples, en guaraníes
+        </h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          {[
+            {
+              name: "Básico",
+              price: "Gratis",
+              sub: "Siempre gratis",
+              features: ["Hasta 30 productos", "1 catálogo", "Link y código QR"],
+              cta: "Empezar gratis",
+              highlight: false,
+            },
+            {
+              name: "Pro",
+              price: "Gs. 120.000",
+              sub: "por mes",
+              features: ["Productos ilimitados", "3 catálogos", "Estadísticas de visitas"],
+              cta: "Empezar gratis",
+              highlight: true,
+            },
+            {
+              name: "Business",
+              price: "Gs. 280.000",
+              sub: "por mes",
+              features: ["Todo lo de Pro", "Dominio propio", "Sucursales ilimitadas"],
+              cta: "Contactar",
+              highlight: false,
+            },
+          ].map((plan) => (
+            <div
+              key={plan.name}
+              className="bg-white rounded-[14px] p-6 shadow-card flex flex-col"
+              style={plan.highlight ? { outline: "2px solid #f6a623" } : {}}
+            >
+              {plan.highlight && (
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Star className="w-3.5 h-3.5 text-primary fill-primary" />
+                  <span className="text-[11.5px] font-extrabold text-primary uppercase tracking-wider">
+                    Más popular
+                  </span>
+                </div>
+              )}
+              <h3 className="font-heading text-[20px] font-extrabold text-foreground">{plan.name}</h3>
+              <div className="mt-2 mb-4">
+                <span className="font-heading text-[26px] font-extrabold text-foreground">{plan.price}</span>
+                <span className="text-[13px] text-muted-foreground ml-1">{plan.sub}</span>
+              </div>
+              <ul className="space-y-2 flex-1 mb-6">
+                {plan.features.map((f) => (
+                  <li key={f} className="text-[14px] text-muted-foreground flex gap-2">
+                    <span className="text-brand-green font-bold">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/registro"
+                className="block text-center py-[11px] rounded-[24px] font-extrabold text-[14px] transition-opacity hover:opacity-90"
+                style={
+                  plan.highlight
+                    ? { background: "#f6a623", color: "#1b2733" }
+                    : { background: "#16283d", color: "#fff" }
+                }
+              >
+                {plan.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ background: "#0f1c2e" }}>
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-baseline gap-[2px]">
+            <span className="font-heading text-[18px] text-white">Catalo</span>
+            <span className="font-heading text-[18px] text-primary">Go</span>
+            <span className="text-[10px] text-[#8aa0b6] font-bold ml-1">.py</span>
+          </div>
+          <p className="text-[13px] text-[#7a8694]">
+            © {new Date().getFullYear()} CataloGo — Para emprendedores del Paraguay
+          </p>
+          <div className="flex gap-4">
+            <Link href="/login" className="text-[13px] text-[#9fb0c2] hover:text-white transition-colors">
+              Iniciar sesión
+            </Link>
+            <Link href="/registro" className="text-[13px] text-[#9fb0c2] hover:text-white transition-colors">
+              Registrarse
+            </Link>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
