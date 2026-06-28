@@ -14,7 +14,6 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/login");
 
-  // Verificar que tenga comercio creado
   const { data: comercio } = await supabase
     .from("comercios")
     .select("id, nombre, slug, plan")
@@ -24,9 +23,9 @@ export default async function DashboardLayout({
   if (!comercio) redirect("/registro");
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-sage-100 flex">
       <DashboardNav comercioNombre={comercio.nombre} comercioSlug={comercio.slug} />
-      <main className="flex-1 p-6 overflow-auto max-w-5xl">{children}</main>
+      <main className="flex-1 p-7 overflow-auto">{children}</main>
     </div>
   );
 }

@@ -41,20 +41,17 @@ export default function RegistroPage() {
   async function onSubmit(data: Form) {
     setLoading(true);
     try {
-      // 1. Crear usuario en Supabase Auth
-      const { data: authData, error: authError } =
-        await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: { data: { nombre: data.nombre } },
-        });
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: { data: { nombre: data.nombre } },
+      });
 
       if (authError || !authData.user) {
         toast.error(authError?.message ?? "Error al crear la cuenta");
         return;
       }
 
-      // Establecer sesión explícitamente antes de queries a la DB
       if (authData.session) {
         await supabase.auth.setSession({
           access_token: authData.session.access_token,
@@ -65,28 +62,23 @@ export default function RegistroPage() {
         return;
       }
 
-      // 2. Generar slug único con sufijo random para evitar colisiones
       const suffix = Math.random().toString(36).slice(2, 6);
       const slug = `${slugify(data.nombre)}-${suffix}`;
 
-      // 3. Crear registro en comercios
-      const { error: comercioError } = await supabase
-        .from("comercios")
-        .insert({
-          user_id: authData.user.id,
-          nombre: data.nombre,
-          slug,
-          whatsapp: data.whatsapp,
-          plan: "basico",
-          activo: true,
-        });
+      const { error: comercioError } = await supabase.from("comercios").insert({
+        user_id: authData.user.id,
+        nombre: data.nombre,
+        slug,
+        whatsapp: data.whatsapp,
+        plan: "basico",
+        activo: true,
+      });
 
       if (comercioError) {
         toast.error("Error al crear el comercio: " + comercioError.message);
         return;
       }
 
-      // 4. Crear catálogo por defecto
       const { data: comercioData } = await supabase
         .from("comercios")
         .select("id")
@@ -108,78 +100,73 @@ export default function RegistroPage() {
     }
   }
 
-  const fields = [
-    {
-      name: "nombre" as const,
-      label: "Nombre del negocio",
-      type: "text",
-      placeholder: "Ej: Despensa Don Carlos",
-    },
-    {
-      name: "whatsapp" as const,
-      label: "Número WhatsApp (sin 0)",
-      type: "tel",
-      placeholder: "Ej: 981123456",
-    },
-    { name: "email" as const, label: "Email", type: "email", placeholder: "tu@email.com" },
-    {
-      name: "password" as const,
-      label: "Contraseña",
-      type: "password",
-      placeholder: "••••••••",
-    },
-    {
-      name: "confirmPassword" as const,
-      label: "Confirmar contraseña",
-      type: "password",
-      placeholder: "••••••••",
-    },
+  const fields: {
+    name: keyof Form;
+    label: string;
+    type: string;
+    placeholder: string;
+  }[] = [
+    { name: "nombre", label: "Nombre del negocio", type: "text", placeholder: "Ej: Despensa Don Carlos" },
+    { name: "whatsapp", label: "Número WhatsApp (sin 0)", type: "tel", placeholder: "Ej: 981123456" },
+    { name: "email", label: "Email", type: "email", placeholder: "tu@email.com" },
+    { name: "password", label: "Contraseña", type: "password", placeholder: "••••••••" },
+    { name: "confirmPassword", label: "Confirmar contraseña", type: "password", placeholder: "••••••••" },
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10">
-      <div className="w-full max-w-md bg-white rounded-xl border p-8 shadow-sm">
-        <Link href="/" className="text-xl font-bold text-primary block mb-6">
-          CataloGo
+    <div className="min-h-screen flex flex-col" style={{ background: "#e9ebe4" }}>
+      {/* Top bar */}
+      <div className="px-6 py-4 flex items-center" style={{ background: "#0f1c2e" }}>
+        <Link href="/" className="flex items-baseline gap-[2px]">
+          <span className="font-heading text-[22px] text-white">Catalo</span>
+          <span className="font-heading text-[22px] text-primary">Go</span>
+          <span className="text-[11px] text-[#8aa0b6] font-bold ml-1">.py</span>
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          Creá tu catálogo gratis
-        </h1>
-        <p className="text-sm text-gray-500 mb-6">
-          ¿Ya tenés cuenta?{" "}
-          <Link href="/login" className="text-primary font-medium">
-            Iniciá sesión
-          </Link>
-        </p>
+      </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {fields.map(({ name, label, type, placeholder }) => (
-            <div key={name}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {label}
-              </label>
-              <input
-                {...register(name)}
-                type={type}
-                placeholder={placeholder}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {errors[name] && (
-                <p className="text-xs text-red-500 mt-1">
-                  {errors[name]?.message}
-                </p>
-              )}
-            </div>
-          ))}
+      {/* Card */}
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md bg-white rounded-[14px] p-8 shadow-card-md">
+          <h1 className="font-heading text-[26px] font-extrabold text-foreground mb-1">
+            Creá tu catálogo gratis
+          </h1>
+          <p className="text-[14px] text-muted-foreground mb-6">
+            ¿Ya tenés cuenta?{" "}
+            <Link href="/login" className="font-semibold text-brand-blue hover:underline">
+              Iniciá sesión
+            </Link>
+          </p>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-60 mt-2"
-          >
-            {loading ? "Creando cuenta..." : "Crear cuenta gratis"}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {fields.map(({ name, label, type, placeholder }) => (
+              <div key={name}>
+                <label className="block text-[13.5px] font-semibold text-foreground mb-1.5">
+                  {label}
+                </label>
+                <input
+                  {...register(name)}
+                  type={type}
+                  placeholder={placeholder}
+                  className="w-full px-3 py-[10px] border border-sage-300 rounded-[9px] text-[14px] outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+                />
+                {errors[name] && (
+                  <p className="text-xs text-destructive mt-1">
+                    {errors[name]?.message}
+                  </p>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-[12px] rounded-[24px] font-extrabold text-[14.5px] disabled:opacity-60 transition-opacity mt-2"
+              style={{ background: "#f6a623", color: "#1b2733" }}
+            >
+              {loading ? "Creando cuenta..." : "Crear cuenta gratis"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

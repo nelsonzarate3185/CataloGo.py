@@ -10,5 +10,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-public), 'Public Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 800;
   }
 }
