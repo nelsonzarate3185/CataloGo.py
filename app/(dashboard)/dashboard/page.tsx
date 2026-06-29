@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { AlertTriangle, Package, ShoppingBag, Star, TrendingUp, ExternalLink } from "lucide-react";
 import CopyLinkButton from "@/components/dashboard/CopyLinkButton";
@@ -86,7 +87,11 @@ export default async function DashboardPage() {
   const maxVentaDia = Math.max(...diasSemana.map((d) => d.total), 1);
   const porcentajeUso =
     limiteProductos === Infinity ? 0 : (totalProductos / limiteProductos) * 100;
-  const catalogoUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${comercio.slug}`;
+  const reqHeaders = await headers();
+  const host = reqHeaders.get("host") ?? "";
+  const proto = reqHeaders.get("x-forwarded-proto") ?? "https";
+  const baseUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL ?? "");
+  const catalogoUrl = `${baseUrl}/c/${comercio.slug}`;
 
   const fechaHoy = new Date().toLocaleDateString("es-PY", {
     weekday: "long",
@@ -142,7 +147,7 @@ export default async function DashboardPage() {
         </div>
         {catalogo && (
           <Link
-            href={catalogoUrl}
+            href={`/c/${comercio.slug}`}
             target="_blank"
             className="flex items-center gap-2 px-4 py-2 rounded-[9px] bg-white border border-sage-300 text-[13.5px] font-bold text-foreground hover:border-primary transition-colors shadow-card"
           >
