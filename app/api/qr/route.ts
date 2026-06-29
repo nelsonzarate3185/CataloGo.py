@@ -7,7 +7,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "slug requerido" }, { status: 400 });
   }
 
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}/c/${slug}`;
+  const host = request.headers.get("host") ?? "";
+  const proto = request.headers.get("x-forwarded-proto") ?? "https";
+  const baseUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL ?? "");
+  const url = `${baseUrl}/c/${slug}`;
 
   try {
     const buffer = await generateQRBuffer(url);
