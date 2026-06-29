@@ -96,6 +96,7 @@ export default function CatalogoPublico({
 
       {/* Header principal — navy */}
       <header className="sticky top-0 z-20" style={{ background: "#0f1c2e" }}>
+
         <div className="max-w-5xl mx-auto px-5 py-3 flex items-center gap-4">
 
           {/* Logo + tienda */}
@@ -179,8 +180,90 @@ export default function CatalogoPublico({
         )}
       </header>
 
+      {/* Hero banner — visible solo cuando no hay filtro activo */}
+      {!categoriaActiva && !busqueda.trim() && (
+        <section className="max-w-5xl mx-auto px-5 pt-5">
+          <div
+            className="relative rounded-[14px] overflow-hidden"
+            style={{
+              background: "linear-gradient(120deg, #102b46 0%, #1c4b73 55%, #2d6da0 100%)",
+              minHeight: "180px",
+            }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 14px, rgba(255,255,255,0) 14px 28px)",
+              }}
+            />
+            {comercio.logo_url && (
+              <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden sm:block">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 relative">
+                  <Image src={comercio.logo_url} alt={comercio.nombre} fill className="object-cover" />
+                </div>
+              </div>
+            )}
+            <div className="relative px-8 py-8">
+              <h1
+                className="font-heading font-extrabold text-white leading-tight"
+                style={{ fontSize: "clamp(24px, 4vw, 38px)" }}
+              >
+                {comercio.nombre}
+              </h1>
+              {catalogo.descripcion && (
+                <p className="text-[14px] mt-2 max-w-lg" style={{ color: "#c5d6e6" }}>
+                  {catalogo.descripcion}
+                </p>
+              )}
+              <div className="flex gap-5 mt-3">
+                <span className="text-[13px]" style={{ color: "#c5d6e6" }}>
+                  <strong className="text-white">{todosProductos.length}</strong> productos
+                </span>
+                {categorias.length > 0 && (
+                  <span className="text-[13px]" style={{ color: "#c5d6e6" }}>
+                    <strong className="text-white">{categorias.length}</strong>{" "}
+                    {categorias.length === 1 ? "categoría" : "categorías"}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Grid de productos */}
       <main className="max-w-5xl mx-auto px-5 py-5 pb-28">
+
+        {/* Grid de categorías — visible solo cuando no hay filtro activo */}
+        {!categoriaActiva && !busqueda.trim() && categorias.length > 0 && (
+          <div className="mb-6">
+            <h2 className="font-heading text-[18px] font-extrabold text-foreground mb-3">
+              Categorías
+            </h2>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+              {categorias.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategoriaActiva(cat.id)}
+                  className="flex flex-col items-center gap-2 p-3 bg-white rounded-[12px] text-center transition-shadow hover:shadow-md"
+                  style={{ boxShadow: "0 1px 3px rgba(20,30,45,.07)" }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-extrabold text-sm shrink-0"
+                    style={{ background: "#16283d" }}
+                  >
+                    {cat.nombre.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-[12px] font-semibold text-foreground leading-tight">
+                    {cat.nombre}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {productosFiltrados.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground text-sm">
             {busqueda
@@ -193,7 +276,9 @@ export default function CatalogoPublico({
               <h2 className="font-heading text-[22px] font-extrabold text-foreground">
                 {categoriaActiva
                   ? categorias.find((c) => c.id === categoriaActiva)?.nombre ?? "Productos"
-                  : "Todos los productos"}
+                  : busqueda.trim()
+                  ? `Resultados para "${busqueda}"`
+                  : "Recomendados para vos"}
               </h2>
               <span className="text-[14px] text-muted-foreground">
                 {productosFiltrados.length} artículo{productosFiltrados.length !== 1 ? "s" : ""}
@@ -371,7 +456,7 @@ function ProductoCard({
             className="absolute top-2 left-2 px-2 py-0.5 rounded-[6px] text-[11px] font-extrabold"
             style={{ background: "#c4314b", color: "#fff" }}
           >
-            Destacado
+            Más vendido
           </span>
         )}
         {!producto.disponible && (

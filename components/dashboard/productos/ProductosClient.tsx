@@ -206,22 +206,26 @@ function SortableProductoRow({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const estadoBg = producto.disponible ? "#e7f4ec" : "#fbe9ec";
+  const estadoColor = producto.disponible ? "#1f8a52" : "#c4314b";
+  const estadoLabel = producto.disponible ? "Activo" : "Sin stock";
+
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className="flex items-center gap-3 bg-white rounded-xl border px-4 py-3"
+      style={{ boxShadow: "0 1px 3px rgba(20,30,45,.06)", border: "1px solid #f0f1ec", ...style }}
+      className="flex items-center gap-3 bg-white rounded-[12px] px-4 py-3"
     >
       <button
         {...attributes}
         {...listeners}
-        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing"
+        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing shrink-0"
       >
         <GripVertical className="w-4 h-4" />
       </button>
 
       {producto.imagen_url ? (
-        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 relative">
+        <div className="w-11 h-11 rounded-[8px] overflow-hidden shrink-0 relative">
           <Image
             src={producto.imagen_url}
             alt={producto.nombre}
@@ -230,30 +234,40 @@ function SortableProductoRow({
           />
         </div>
       ) : (
-        <div className="w-12 h-12 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center text-gray-300 text-xs">
+        <div
+          className="w-11 h-11 rounded-[8px] shrink-0 flex items-center justify-center text-[11px] font-mono"
+          style={{ background: "#f3f5f1", color: "#9aa6a0" }}
+        >
           Sin foto
         </div>
       )}
 
       <div className="flex-1 min-w-0">
-        <p
-          className={`font-medium text-sm ${!producto.disponible ? "text-gray-400 line-through" : "text-gray-900"}`}
-        >
+        <p className="font-semibold text-[14px] text-foreground leading-tight truncate">
           {producto.nombre}
         </p>
-        <p className="text-xs text-primary font-semibold mt-0.5">
+        <p className="text-[13px] font-bold mt-0.5" style={{ color: "#f6a623" }}>
           {formatGS(producto.precio)}
         </p>
       </div>
+
+      {/* Badge de estado */}
+      <span
+        className="shrink-0 px-[10px] py-[3px] rounded-[20px] text-[12px] font-bold hidden sm:inline-flex"
+        style={{ background: estadoBg, color: estadoColor }}
+      >
+        {estadoLabel}
+      </span>
 
       <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={onToggle}
           title={producto.disponible ? "Desactivar" : "Activar"}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"
+          className="p-1.5 rounded-lg hover:bg-gray-100"
+          style={{ color: producto.disponible ? "#1f8a52" : "#9aa6a0" }}
         >
           {producto.disponible ? (
-            <Eye className="w-4 h-4 text-green-500" />
+            <Eye className="w-4 h-4" />
           ) : (
             <EyeOff className="w-4 h-4" />
           )}

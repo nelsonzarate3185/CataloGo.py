@@ -33,7 +33,11 @@ export default async function DashboardPage() {
   const hace30Dias = new Date(ahora.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const hoy = new Date(ahora.setHours(0, 0, 0, 0)).toISOString();
 
-  const [productosRes, pedidosRes, pedidosHoyRes, pedidosRecientesRes] = await Promise.all([
+  const inicioSemana = new Date(ahora);
+  inicioSemana.setDate(inicioSemana.getDate() - 6);
+  inicioSemana.setHours(0, 0, 0, 0);
+
+  const [productosRes, pedidosRes, pedidosHoyRes, pedidosRecientesRes, pedidosSemanaRes] = await Promise.all([
     supabase
       .from("productos")
       .select("id", { count: "exact", head: true })
@@ -55,6 +59,11 @@ export default async function DashboardPage() {
       .eq("comercio_id", comercio.id)
       .order("created_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("pedidos")
+      .select("created_at, total")
+      .eq("comercio_id", comercio.id)
+      .gte("created_at", inicioSemana.toISOString()),
   ]);
 
   const totalProductos = productosRes.count ?? 0;
@@ -62,6 +71,19 @@ export default async function DashboardPage() {
   const pedidosHoy = pedidosHoyRes.count ?? 0;
   const ventasHoy = (pedidosHoyRes.data ?? []).reduce((s, p) => s + (p.total ?? 0), 0);
   const limiteProductos = PLAN_LIMITES[comercio.plan].productos;
+
+  const DIAS_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const diasSemana = Array.from({ length: 7 }, (_, i) => {
+    const fecha = new Date(inicioSemana);
+    fecha.setDate(fecha.getDate() + i);
+    const dayStr = fecha.toISOString().slice(0, 10);
+    const ventas = (pedidosSemanaRes.data ?? [])
+      .filter((p) => p.created_at.slice(0, 10) === dayStr)
+      .reduce((s, p) => s + (p.total ?? 0), 0);
+    return { label: DIAS_LABELS[fecha.getDay()], total: ventas, isToday: i === 6 };
+  });
+  const totalVentasSemana = diasSemana.reduce((s, d) => s + d.total, 0);
+  const maxVentaDia = Math.max(...diasSemana.map((d) => d.total), 1);
   const porcentajeUso =
     limiteProductos === Infinity ? 0 : (totalProductos / limiteProductos) * 100;
   const catalogoUrl = `${process.env.NEXT_PUBLIC_APP_URL}/c/${comercio.slug}`;
@@ -176,39 +198,66 @@ export default async function DashboardPage() {
         })}
       </div>
 
-      {/* Link del catálogo + pedidos recientes */}
+      {/* Gráfico semanal + pedidos recientes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        {/* Link catálogo */}
-        <div className="bg-white rounded-[14px] p-5 shadow-card">
-          <h3 className="font-heading text-[16px] font-extrabold text-foreground mb-4">
-            Link de tu tienda
-          </h3>
-          {catalogo ? (
-            <div className="flex items-center gap-2">
-              <code className="flex-1 bg-sage-50 border border-sage-300 rounded-lg px-3 py-2 text-sm text-muted-foreground truncate">
-                {catalogoUrl}
-              </code>
-              <CopyLinkButton url={catalogoUrl} />
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No tenés catálogos activos.
-            </p>
-          )}
 
-          {/* Barra de uso del plan */}
-          {limiteProductos !== Infinity && (
-            <div className="mt-4">
-              <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-                <span>{totalProductos} productos activos</span>
-                <span>límite: {limiteProductos}</span>
+        {/* Ventas de la semana — gráfico de barras */}
+        <div className="bg-white rounded-[14px] p-5 shadow-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-[16px] font-extrabold text-foreground">
+              Ventas de la semana
+            </h3>
+            <span className="text-[13px] text-muted-foreground">
+              Total: {formatGS(totalVentasSemana)}
+            </span>
+          </div>
+          <div className="flex items-end gap-2 h-[160px] pt-2">
+            {diasSemana.map(({ label, total, isToday }) => {
+              const heightPx = maxVentaDia > 0 ? Math.max((total / maxVentaDia) * 140, total > 0 ? 6 : 3) : 3;
+              return (
+                <div key={label} className="flex-1 flex flex-col items-center gap-2">
+                  <div
+                    className="w-full rounded-t-[6px] transition-all"
+                    style={{
+                      height: `${heightPx}px`,
+                      background: isToday ? "#f6a623" : "#cdd9e6",
+                    }}
+                  />
+                  <span
+                    className="text-[11.5px] font-semibold"
+                    style={{ color: isToday ? "#f6a623" : "#8b95a1" }}
+                  >
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Link catálogo debajo del gráfico */}
+          {catalogo && (
+            <div className="mt-4 pt-4 border-t border-sage-200">
+              <p className="text-[12px] text-muted-foreground mb-1.5">Link de tu tienda</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-sage-50 border border-sage-300 rounded-lg px-3 py-2 text-[12px] text-muted-foreground truncate">
+                  {catalogoUrl}
+                </code>
+                <CopyLinkButton url={catalogoUrl} />
               </div>
-              <div className="h-1.5 bg-sage-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${Math.min(porcentajeUso, 100)}%` }}
-                />
-              </div>
+              {limiteProductos !== Infinity && (
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                    <span>{totalProductos} de {limiteProductos} productos</span>
+                    <span>{Math.round(porcentajeUso)}%</span>
+                  </div>
+                  <div className="h-1.5 bg-sage-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${Math.min(porcentajeUso, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -223,24 +272,31 @@ export default async function DashboardPage() {
               Aún no recibiste pedidos.
             </p>
           ) : (
-            <div className="divide-y divide-sage-200">
+            <div className="divide-y" style={{ borderColor: "#f0f1ec" }}>
               {(pedidosRecientesRes.data ?? []).map((pedido) => (
                 <div
                   key={pedido.id}
-                  className="flex items-center justify-between py-3"
+                  className="flex items-center justify-between py-[11px]"
                 >
                   <div>
                     <p className="text-[14px] font-bold text-foreground">
                       {pedido.nombre_cliente ?? "Cliente"}
                     </p>
-                    <p className="text-[12.5px] text-muted-foreground">
+                    <p className="text-[12px]" style={{ color: "#8b95a1" }}>
+                      #{pedido.id.slice(0, 8)} ·{" "}
                       {new Date(pedido.created_at).toLocaleDateString("es-PY")}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[14px] font-bold">
+                    <p className="text-[14px] font-bold text-foreground">
                       {pedido.total ? formatGS(pedido.total) : "—"}
                     </p>
+                    <span
+                      className="text-[11.5px] font-bold"
+                      style={{ color: "#1f8a52" }}
+                    >
+                      Recibido
+                    </span>
                   </div>
                 </div>
               ))}
@@ -248,7 +304,8 @@ export default async function DashboardPage() {
           )}
           <Link
             href="/dashboard/pedidos"
-            className="block mt-3 text-center text-[13px] text-brand-blue font-semibold hover:underline"
+            className="block mt-3 text-center text-[13px] font-semibold hover:underline"
+            style={{ color: "#1a73c7" }}
           >
             Ver todos los pedidos ›
           </Link>
