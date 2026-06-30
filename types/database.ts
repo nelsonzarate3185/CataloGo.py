@@ -235,6 +235,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      users: {
+        Row: {
+          id: string;
+          email: string | null;
+          rol: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          email?: string | null;
+          rol?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string | null;
+          rol?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       sucursales: {
         Row: {
           id: string;
