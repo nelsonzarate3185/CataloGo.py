@@ -90,8 +90,8 @@ export default async function DashboardPage() {
   const reqHeaders = await headers();
   const host = reqHeaders.get("host") ?? "";
   const proto = reqHeaders.get("x-forwarded-proto") ?? "https";
-  const baseUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL ?? "");
-  const catalogoUrl = `${baseUrl}/c/${comercio.slug}`;
+  const dynamicBase = host ? `${proto}://${host}` : "";
+  const catalogoUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? dynamicBase}/c/${comercio.slug}`;
 
   const fechaHoy = new Date().toLocaleDateString("es-PY", {
     weekday: "long",

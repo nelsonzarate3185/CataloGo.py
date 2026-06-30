@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
 
   const host = request.headers.get("host") ?? "";
   const proto = request.headers.get("x-forwarded-proto") ?? "https";
-  const baseUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL ?? "");
-  const url = `${baseUrl}/c/${slug}`;
+  const dynamicBase = host ? `${proto}://${host}` : "";
+  const url = `${process.env.NEXT_PUBLIC_APP_URL ?? dynamicBase}/c/${slug}`;
 
   try {
     const buffer = await generateQRBuffer(url);
