@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Public Sans', system-ui, sans-serif; background: #e9ebe4; color: #1b2733; -webkit-font-smoothing: antialiased; }
+  input, button, select { font-family: inherit; }
+  button { cursor: pointer; border: none; background: none; }
+  ::placeholder { color: #8b95a1; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #e9ebe4;">
+
+  <!-- ===== Switcher (herramienta de diseño, no es parte del producto) ===== -->
+  <div style="position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 14px; padding: 9px 20px; background: #11161d; color: #cdd4dd; font-size: 12.5px;">
+    <span style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 10.5px; color: #7a8694;">Vista de diseño</span>
+    <div style="display: flex; gap: 6px;">
+      <button onClick="{{ goHome }}" style="{{ tabHome }}">Comprador · Inicio</button>
+      <button onClick="{{ goProduct }}" style="{{ tabProduct }}">Comprador · Producto</button>
+      <button onClick="{{ goSeller }}" style="{{ tabSeller }}">Vendedor · Panel</button>
+    </div>
+    <span style="margin-left: auto; color: #5f6b78;">CataloGo.py — marketplace</span>
+  </div>
+
+  <!-- ===== Header del comprador ===== -->
+  <sc-if value="{{ isBuyer }}" hint-placeholder-val="{{ true }}">
+  <div>
+    <div style="background: #0f1c2e; color: #fff;">
+      <div style="max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 18px; padding: 11px 22px;">
+        <!-- Logo -->
+        <button onClick="{{ goHome }}" style="display: flex; align-items: baseline; gap: 1px; padding: 6px 8px; border-radius: 8px; background: transparent;">
+          <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 23px; color: #fff; letter-spacing: -.02em;">Catalo</span>
+          <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 23px; color: #f6a623; letter-spacing: -.02em;">Go</span>
+          <span style="font-weight: 700; font-size: 12px; color: #8aa0b6; margin-left: 1px;">.py</span>
+        </button>
+        <!-- Ubicación -->
+        <div style="display: flex; align-items: center; gap: 7px; padding: 4px 8px; border-radius: 8px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>
+          <div style="line-height: 1.15;">
+            <div style="font-size: 11px; color: #9fb0c2;">Enviar a</div>
+            <div style="font-size: 13.5px; font-weight: 700;">Asunción 1209</div>
+          </div>
+        </div>
+        <!-- Buscador -->
+        <div style="flex: 1; display: flex; align-items: stretch; height: 44px; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 2px transparent;">
+          <select style="border: none; background: #eef0f2; color: #44505d; font-size: 13px; font-weight: 600; padding: 0 12px; max-width: 130px;">
+            <option>Todo</option>
+            <option>Electrónica</option>
+            <option>Hogar</option>
+            <option>Moda</option>
+          </select>
+          <input placeholder="Buscar productos, marcas y más…" style="flex: 1; border: none; padding: 0 16px; font-size: 15px; color: #1b2733; background: #fff; outline: none;">
+          <button style="display: flex; align-items: center; justify-content: center; width: 56px; background: #f6a623;">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#1b2733" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </button>
+        </div>
+        <!-- Cuenta -->
+        <div style="line-height: 1.15; padding: 4px 8px; border-radius: 8px;">
+          <div style="font-size: 11px; color: #9fb0c2;">Hola, iniciá sesión</div>
+          <div style="font-size: 13.5px; font-weight: 700;">Cuenta y listas ▾</div>
+        </div>
+        <!-- Pedidos -->
+        <div style="line-height: 1.15; padding: 4px 8px; border-radius: 8px;">
+          <div style="font-size: 11px; color: #9fb0c2;">Devoluciones</div>
+          <div style="font-size: 13.5px; font-weight: 700;">y Pedidos</div>
+        </div>
+        <!-- Carrito -->
+        <button style="display: flex; align-items: flex-end; gap: 6px; padding: 4px 8px; border-radius: 8px; background: transparent; color: #fff;">
+          <div style="position: relative;">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M3 4h2l2.4 12.3a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.2L21 8H6"/><circle cx="9.5" cy="20.5" r="1.4" fill="#fff"/><circle cx="18" cy="20.5" r="1.4" fill="#fff"/></svg>
+            <span style="position: absolute; top: -5px; right: -6px; min-width: 19px; height: 19px; padding: 0 5px; display: flex; align-items: center; justify-content: center; background: #f6a623; color: #1b2733; font-size: 12px; font-weight: 800; border-radius: 10px;">{{ cartLabel }}</span>
+          </div>
+          <span style="font-size: 13.5px; font-weight: 700; padding-bottom: 2px;">Carrito</span>
+        </button>
+      </div>
+    </div>
+    <!-- Nav secundaria -->
+    <div style="background: #16283d; color: #dbe3ec;">
+      <div style="max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 4px; padding: 7px 18px; font-size: 13.5px; font-weight: 600;">
+        <span style="display: flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 6px; font-weight: 700;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dbe3ec" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Todas las categorías
+        </span>
+        <span style="padding: 5px 10px; border-radius: 6px;">Ofertas del día</span>
+        <span style="padding: 5px 10px; border-radius: 6px;">Electrónica</span>
+        <span style="padding: 5px 10px; border-radius: 6px;">Hogar</span>
+        <span style="padding: 5px 10px; border-radius: 6px;">Moda</span>
+        <span style="padding: 5px 10px; border-radius: 6px;">Mate &amp; Termos</span>
+        <span style="padding: 5px 10px; border-radius: 6px; color: #f6c062;">Envío gratis +Gs. 250.000</span>
+        <button onClick="{{ goSeller }}" style="margin-left: auto; display: flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 7px; background: #f6a623; color: #1b2733; font-weight: 800; font-size: 13px;">Vendé con nosotros</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== HOME / CATÁLOGO ===== -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 18px 22px 60px;">
+    <!-- Hero -->
+    <div style="display: grid; grid-template-columns: 1fr 320px; gap: 16px; margin-bottom: 26px;">
+      <div style="position: relative; height: 320px; border-radius: 14px; overflow: hidden; background: linear-gradient(120deg, #102b46 0%, #1c4b73 55%, #2d6da0 100%);">
+        <div style="position: absolute; inset: 0; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 14px, rgba(255,255,255,0) 14px 28px);"></div>
+        <div style="position: relative; padding: 44px 46px; max-width: 560px;">
+          <div style="display: inline-block; padding: 5px 12px; border-radius: 20px; background: #f6a623; color: #1b2733; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;">Ofertas de la semana</div>
+          <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 40px; line-height: 1.08; font-weight: 800; color: #fff; margin: 18px 0 12px; letter-spacing: -.02em;">Todo para tu casa,<br>hasta 40% menos</h1>
+          <p style="font-size: 16px; color: #c5d6e6; margin: 0 0 22px; max-width: 420px;">Productos de emprendedores y comercios de todo el Paraguay, con envío a todo el país.</p>
+          <button style="padding: 13px 26px; border-radius: 10px; background: #f6a623; color: #1b2733; font-size: 15px; font-weight: 800;">Ver ofertas</button>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-rows: 1fr 1fr; gap: 16px;">
+        <div style="border-radius: 14px; background: #fff; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(20,30,45,.07);">
+          <div>
+            <div style="font-size: 12px; font-weight: 700; color: #c4314b; text-transform: uppercase; letter-spacing: .05em;">Cupón nuevo cliente</div>
+            <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800; margin-top: 6px;">Gs. 50.000 OFF</div>
+            <div style="font-size: 13.5px; color: #5f6b78; margin-top: 4px;">En tu primera compra sobre Gs. 300.000</div>
+          </div>
+          <button style="align-self: flex-start; padding: 8px 16px; border-radius: 8px; background: #16283d; color: #fff; font-weight: 700; font-size: 13px;">Activar cupón</button>
+        </div>
+        <div style="border-radius: 14px; background: #fff; padding: 20px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(20,30,45,.07);">
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #eaf3ec; display: flex; align-items: center; justify-content: center;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1f8a52" stroke-width="2"><path d="M3 7h13v8H3z"/><path d="M16 10h3l2 3v2h-5z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17.5" cy="17" r="1.6"/></svg>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 15px;">Envío en 24–48 h</div>
+            <div style="font-size: 13px; color: #5f6b78;">Gran Asunción y ciudades del interior</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categorías -->
+    <div style="display: flex; gap: 12px; margin-bottom: 30px; overflow: hidden;">
+      <sc-for list="{{ categories }}" as="c" hint-placeholder-count="7">
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 16px 8px; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(20,30,45,.06);">
+          <div style="width: 46px; height: 46px; border-radius: 50%; background: #f0f3ef; display: flex; align-items: center; justify-content: center; font-size: 22px;">{{ c.icon }}</div>
+          <div style="font-size: 13px; font-weight: 600; color: #34404d; text-align: center;">{{ c.name }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- Sección recomendados -->
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;">
+      <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; margin: 0;">Recomendados para vos</h2>
+      <span style="font-size: 14px; color: #1a73c7; font-weight: 600;">Ver todo ›</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
+      <sc-for list="{{ products }}" as="p" hint-placeholder-count="10">
+        <div style="background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(20,30,45,.07); display: flex; flex-direction: column;">
+          <button onClick="{{ goProduct }}" style="position: relative; display: block; width: 100%; height: 168px; background-color: #f3f5f1; background-image: repeating-linear-gradient(135deg, #e9ece6 0 11px, #f3f5f1 11px 22px);">
+            <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-family: ui-monospace, monospace; font-size: 11px; color: #9aa6a0; letter-spacing: .04em;">{{ p.cat }}</span>
+            <sc-if value="{{ p.badge }}">
+              <span style="position: absolute; top: 10px; left: 10px; padding: 3px 9px; border-radius: 6px; background: #c4314b; color: #fff; font-size: 11px; font-weight: 800;">{{ p.badge }}</span>
+            </sc-if>
+          </button>
+          <div style="padding: 13px 14px 15px; display: flex; flex-direction: column; gap: 6px; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #f6a623; font-size: 13px; letter-spacing: 1px;">{{ p.stars }}</span>
+              <span style="font-size: 12px; color: #5f6b78;">{{ p.rev }}</span>
+            </div>
+            <button onClick="{{ goProduct }}" style="text-align: left; font-size: 14px; line-height: 1.3; color: #1b2733; font-weight: 500; background: transparent; padding: 0; min-height: 36px;">{{ p.name }}</button>
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 2px;">
+              <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: #1b2733;">{{ p.priceText }}</span>
+              <sc-if value="{{ p.oldText }}"><span style="font-size: 12.5px; color: #98a2ad; text-decoration: line-through;">{{ p.oldText }}</span></sc-if>
+            </div>
+            <div style="font-size: 12px; color: #1f8a52; font-weight: 600;">{{ p.shipping }}</div>
+            <button onClick="{{ addOne }}" style="margin-top: 8px; padding: 9px; border-radius: 8px; background: #f6a623; color: #1b2733; font-weight: 700; font-size: 13.5px;">Agregar al carrito</button>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== PÁGINA DE PRODUCTO ===== -->
+  <sc-if value="{{ isProduct }}">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 16px 22px 60px;">
+    <div style="font-size: 13px; color: #5f6b78; margin-bottom: 16px;">
+      <span style="color: #1a73c7; cursor: pointer;">Electrónica</span> › <span style="color: #1a73c7; cursor: pointer;">Audio</span> › <span>Auriculares inalámbricos</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 90px 1fr 330px; gap: 26px;">
+      <!-- Miniaturas -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="height: 78px; border-radius: 8px; border: 2px solid #f6a623; background-color: #eef1ed; background-image: repeating-linear-gradient(135deg, #e6e9e3 0 9px, #eef1ed 9px 18px);"></div>
+        <div style="height: 78px; border-radius: 8px; border: 1px solid #dde0da; background-color: #eef1ed; background-image: repeating-linear-gradient(135deg, #e6e9e3 0 9px, #eef1ed 9px 18px);"></div>
+        <div style="height: 78px; border-radius: 8px; border: 1px solid #dde0da; background-color: #eef1ed; background-image: repeating-linear-gradient(135deg, #e6e9e3 0 9px, #eef1ed 9px 18px);"></div>
+        <div style="height: 78px; border-radius: 8px; border: 1px solid #dde0da; background-color: #eef1ed; background-image: repeating-linear-gradient(135deg, #e6e9e3 0 9px, #eef1ed 9px 18px);"></div>
+      </div>
+      <!-- Imagen principal + descripción -->
+      <div>
+        <div style="position: relative; height: 420px; border-radius: 14px; background-color: #f3f5f1; background-image: repeating-linear-gradient(135deg, #e9ece6 0 14px, #f3f5f1 14px 28px); box-shadow: 0 1px 3px rgba(20,30,45,.06);">
+          <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-family: ui-monospace, monospace; font-size: 13px; color: #9aa6a0;">[ foto del producto ]</span>
+        </div>
+        <div style="margin-top: 28px;">
+          <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 800; margin: 0 0 12px;">Descripción del producto</h3>
+          <p style="font-size: 15px; line-height: 1.6; color: #3a4651; max-width: 640px; margin: 0 0 14px;">Auriculares Bluetooth 5.3 con cancelación activa de ruido, hasta 38 horas de batería con el estuche y resistencia al agua IPX5. Ideales para el día a día, llamadas y deporte. Incluyen estuche de carga rápida USB-C.</p>
+          <ul style="font-size: 14.5px; line-height: 1.9; color: #3a4651; padding-left: 20px; margin: 0;">
+            <li>Cancelación activa de ruido (ANC) y modo ambiente</li>
+            <li>38 h de autonomía total · carga rápida USB-C</li>
+            <li>Resistencia al agua y sudor IPX5</li>
+            <li>Garantía oficial de 12 meses en Paraguay</li>
+          </ul>
+        </div>
+      </div>
+      <!-- Buy box -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 23px; line-height: 1.25; font-weight: 800; margin: 0 0 8px;">Auriculares Bluetooth con cancelación de ruido — Negro</h1>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: #f6a623; font-size: 15px; letter-spacing: 1px;">★★★★★</span>
+            <span style="font-size: 13.5px; color: #1a73c7; font-weight: 600;">1.204 calificaciones</span>
+          </div>
+        </div>
+        <div style="border-top: 1px solid #e3e5df; border-bottom: 1px solid #e3e5df; padding: 16px 0;">
+          <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-size: 13px; color: #c4314b; font-weight: 700;">-33%</span>
+            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 32px; font-weight: 800;">Gs. 350.000</span>
+          </div>
+          <div style="font-size: 13px; color: #98a2ad; text-decoration: line-through; margin-top: 2px;">Gs. 520.000</div>
+          <div style="font-size: 13.5px; color: #3a4651; margin-top: 10px;">12 cuotas de <strong>Gs. 29.167</strong> sin interés</div>
+        </div>
+        <div style="background: #fff; border: 1px solid #e3e5df; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 13px; box-shadow: 0 1px 3px rgba(20,30,45,.05);">
+          <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800;">Gs. 350.000</div>
+          <div style="font-size: 13.5px; color: #3a4651;">Llega <strong>mañana</strong> si comprás antes de las 18:00 hs</div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: #5f6b78;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5f6b78" stroke-width="2"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>
+            Enviar a Asunción 1209
+          </div>
+          <div style="font-size: 18px; color: #1f8a52; font-weight: 800;">En stock</div>
+          <!-- Cantidad -->
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 13.5px; color: #3a4651;">Cantidad</span>
+            <div style="display: flex; align-items: center; border: 1px solid #d6d9d2; border-radius: 8px; overflow: hidden;">
+              <button onClick="{{ decQty }}" style="width: 34px; height: 34px; font-size: 18px; font-weight: 700; color: #44505d; background: #f5f6f3;">−</button>
+              <span style="width: 38px; text-align: center; font-size: 15px; font-weight: 700;">{{ qtyLabel }}</span>
+              <button onClick="{{ incQty }}" style="width: 34px; height: 34px; font-size: 18px; font-weight: 700; color: #44505d; background: #f5f6f3;">+</button>
+            </div>
+          </div>
+          <button onClick="{{ addQty }}" style="padding: 12px; border-radius: 24px; background: #f6a623; color: #1b2733; font-weight: 800; font-size: 14.5px;">Agregar al carrito</button>
+          <button onClick="{{ addQty }}" style="padding: 12px; border-radius: 24px; background: #ef7d22; color: #fff; font-weight: 800; font-size: 14.5px;">Comprar ahora</button>
+          <div style="display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: #5f6b78; border-top: 1px solid #eceee8; padding-top: 11px;">
+            <div>Vendido por <span style="color: #1a73c7; font-weight: 600;">TecnoStore Py</span></div>
+            <div>Devolución gratis dentro de 30 días</div>
+            <div>Pago protegido · transacción segura</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===== PANEL DEL VENDEDOR ===== -->
+  <sc-if value="{{ isSeller }}">
+  <div style="display: flex; min-height: calc(100vh - 38px); background: #eef0ea;">
+    <!-- Sidebar -->
+    <div style="width: 230px; background: #0f1c2e; color: #c5d0db; padding: 22px 14px; flex-shrink: 0;">
+      <div style="display: flex; align-items: baseline; gap: 1px; padding: 0 8px 22px;">
+        <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: #fff;">Catalo</span>
+        <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 19px; color: #f6a623;">Go</span>
+        <span style="font-size: 11px; color: #8aa0b6; margin-left: 4px; font-weight: 700;">Vendedores</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <div style="display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; background: #f6a623; color: #1b2733; font-weight: 700; font-size: 14px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b2733" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Resumen
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; font-size: 14px; color: #c5d0db;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c5d0db" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg>Mis productos
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; font-size: 14px; color: #c5d0db;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c5d0db" stroke-width="2"><path d="M6 2l1.5 3h9L18 2"/><path d="M4 7h16l-1.4 12.2a2 2 0 0 1-2 1.8H7.4a2 2 0 0 1-2-1.8z"/></svg>Pedidos
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; font-size: 14px; color: #c5d0db;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c5d0db" stroke-width="2"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/></svg>Estadísticas
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; font-size: 14px; color: #c5d0db;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c5d0db" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Mi tienda
+        </div>
+      </div>
+      <button style="margin-top: 22px; width: 100%; padding: 11px; border-radius: 9px; background: #16283d; color: #fff; font-weight: 700; font-size: 13.5px;">+ Publicar producto</button>
+    </div>
+
+    <!-- Contenido -->
+    <div style="flex: 1; padding: 26px 32px 50px; overflow: auto;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;">
+        <div>
+          <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 800; margin: 0;">Buen día, TecnoStore Py 👋</h1>
+          <p style="font-size: 14px; color: #5f6b78; margin: 5px 0 0;">Resumen de tu tienda — sábado 28 de junio</p>
+        </div>
+        <button onClick="{{ goHome }}" style="display: flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 9px; background: #fff; border: 1px solid #dde0da; font-weight: 700; font-size: 13.5px; color: #1b2733;">Ver mi tienda pública ›</button>
+      </div>
+
+      <!-- Métricas -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px;">
+        <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="4">
+          <div style="background: #fff; border-radius: 14px; padding: 18px 19px; box-shadow: 0 1px 3px rgba(20,30,45,.06);">
+            <div style="font-size: 13px; color: #5f6b78; font-weight: 600;">{{ m.label }}</div>
+            <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800; margin: 7px 0 4px;">{{ m.value }}</div>
+            <div style="font-size: 12.5px; font-weight: 700; color: #1f8a52;">{{ m.delta }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Gráfico + tabla -->
+      <div style="display: grid; grid-template-columns: 1fr 360px; gap: 16px; margin-bottom: 22px;">
+        <div style="background: #fff; border-radius: 14px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(20,30,45,.06);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+            <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; margin: 0;">Ventas de la semana</h3>
+            <span style="font-size: 13px; color: #5f6b78;">Total: Gs. 18.420.000</span>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 16px; height: 180px; padding-top: 10px;">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 100%; height: 70px; border-radius: 7px 7px 0 0; background: #cdd9e6;"></div><span style="font-size: 12px; color: #8b95a1;">Lun</span></div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 100%; height: 104px; border-radius: 7px 7px 0 0; background: #cdd9e6;"></div><span style="font-size: 12px; color: #8b95a1;">Mar</span></div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 100%; height: 86px; border-radius: 7px 7px 0 0; background: #cdd9e6;"></div><span style="font-size: 12px; color: #8b95a1;">Mié</span></div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 100%; height: 138px; border-radius: 7px 7px 0 0; background: #f6a623;"></div><span style="font-size: 12px; color: #8b95a1;">Jue</span></div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 100%; height: 120px; border-radius: 7px 7px 0 0; background: #cdd9e6;"></div><span style="font-size: 12px; color: #8b95a1;">Vie</span></div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 100%; height: 160px; border-radius: 7px 7px 0 0; background: #f6a623;"></div><span style="font-size: 12px; color: #8b95a1;">Sáb</span></div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 100%; height: 92px; border-radius: 7px 7px 0 0; background: #cdd9e6;"></div><span style="font-size: 12px; color: #8b95a1;">Dom</span></div>
+          </div>
+        </div>
+        <div style="background: #fff; border-radius: 14px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(20,30,45,.06);">
+          <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; margin: 0 0 14px;">Pedidos recientes</h3>
+          <div style="display: flex; flex-direction: column;">
+            <sc-for list="{{ orders }}" as="o" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f0f1ec;">
+                <div>
+                  <div style="font-size: 14px; font-weight: 700;">{{ o.cliente }}</div>
+                  <div style="font-size: 12.5px; color: #8b95a1;">{{ o.id }} · {{ o.producto }}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 14px; font-weight: 700;">{{ o.monto }}</div>
+                  <span style="font-size: 11.5px; font-weight: 700; color: {{ o.estadoColor }};">{{ o.estado }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de productos -->
+      <div style="background: #fff; border-radius: 14px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(20,30,45,.06);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; margin: 0;">Mis productos</h3>
+          <input placeholder="Buscar producto…" style="width: 230px; height: 38px; border: 1px solid #dde0da; border-radius: 9px; padding: 0 13px; font-size: 13.5px; outline: none;">
+        </div>
+        <div style="display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr 0.9fr; gap: 12px; padding: 0 6px 11px; font-size: 12px; font-weight: 700; color: #8b95a1; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #eceee8;">
+          <span>Producto</span><span>Precio</span><span>Stock</span><span>Estado</span><span style="text-align: right;">Acción</span>
+        </div>
+        <sc-for list="{{ myProducts }}" as="r" hint-placeholder-count="5">
+          <div style="display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr 0.9fr; gap: 12px; align-items: center; padding: 13px 6px; border-bottom: 1px solid #f3f4ef;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0; background-color: #f3f5f1; background-image: repeating-linear-gradient(135deg, #e9ece6 0 7px, #f3f5f1 7px 14px);"></div>
+              <div style="font-size: 14px; font-weight: 600; line-height: 1.3;">{{ r.nombre }}</div>
+            </div>
+            <span style="font-size: 14px; font-weight: 700;">{{ r.precio }}</span>
+            <span style="font-size: 14px; color: #44505d;">{{ r.stock }}</span>
+            <span style="justify-self: start; padding: 4px 11px; border-radius: 20px; font-size: 12px; font-weight: 700; background: {{ r.estadoBg }}; color: {{ r.estadoColor }};">{{ r.estado }}</span>
+            <span style="text-align: right; font-size: 13.5px; color: #1a73c7; font-weight: 700;">Editar</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { screen: 'home', cart: 3, qty: 1 };
+
+  tab(name) {
+    const active = this.state.screen === name;
+    return {
+      padding: '6px 13px',
+      borderRadius: '7px',
+      fontSize: '12.5px',
+      fontWeight: 700,
+      background: active ? '#f6a623' : '#1c232d',
+      color: active ? '#1b2733' : '#aeb8c4',
+      transition: 'all .15s',
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const star = (n) => '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
+    const products = [
+      { name: 'Auriculares Bluetooth con cancelación de ruido', cat: 'Electrónica', priceText: 'Gs. 350.000', oldText: 'Gs. 520.000', stars: '★★★★★', rev: '1.204', badge: 'Más vendido', shipping: 'Envío gratis' },
+      { name: 'Termo Lumilagro acero 1 litro — clásico', cat: 'Mate & Termos', priceText: 'Gs. 215.000', oldText: '', stars: '★★★★☆', rev: '486', badge: '', shipping: 'Envío gratis' },
+      { name: 'Smart TV 43" 4K Ultra HD con Google TV', cat: 'Electrónica', priceText: 'Gs. 1.890.000', oldText: 'Gs. 2.250.000', stars: '★★★★★', rev: '712', badge: 'Oferta', shipping: 'Llega mañana' },
+      { name: 'Set de mate premium con bombilla de alpaca', cat: 'Mate & Termos', priceText: 'Gs. 165.000', oldText: 'Gs. 210.000', stars: '★★★★★', rev: '329', badge: '', shipping: 'Envío gratis' },
+      { name: 'Zapatillas urbanas unisex — varios talles', cat: 'Moda', priceText: 'Gs. 245.000', oldText: '', stars: '★★★★☆', rev: '158', badge: '', shipping: 'Llega mañana' },
+      { name: 'Cafetera express semiautomática 20 bar', cat: 'Hogar', priceText: 'Gs. 1.120.000', oldText: 'Gs. 1.390.000', stars: '★★★★★', rev: '243', badge: 'Oferta', shipping: 'Envío gratis' },
+      { name: 'Ventilador de pie 20" con control remoto', cat: 'Hogar', priceText: 'Gs. 295.000', oldText: '', stars: '★★★★☆', rev: '94', badge: '', shipping: 'Envío gratis' },
+      { name: 'Mochila para notebook resistente al agua 15.6"', cat: 'Accesorios', priceText: 'Gs. 185.000', oldText: 'Gs. 240.000', stars: '★★★★★', rev: '521', badge: '', shipping: 'Llega mañana' },
+      { name: 'Smartwatch deportivo con GPS y oxímetro', cat: 'Electrónica', priceText: 'Gs. 430.000', oldText: 'Gs. 590.000', stars: '★★★★☆', rev: '376', badge: 'Oferta', shipping: 'Envío gratis' },
+      { name: 'Juego de sábanas 2 plazas algodón premium', cat: 'Hogar', priceText: 'Gs. 178.000', oldText: '', stars: '★★★★★', rev: '203', badge: '', shipping: 'Envío gratis' },
+    ];
+
+    const categories = [
+      { name: 'Electrónica', icon: '📱' },
+      { name: 'Hogar', icon: '🏠' },
+      { name: 'Moda', icon: '👕' },
+      { name: 'Mate & Termos', icon: '🧉' },
+      { name: 'Belleza', icon: '💄' },
+      { name: 'Deportes', icon: '⚽' },
+      { name: 'Bebés', icon: '🍼' },
+    ];
+
+    const metrics = [
+      { label: 'Ventas de hoy', value: 'Gs. 4.85 M', delta: '▲ 12% vs. ayer' },
+      { label: 'Pedidos nuevos', value: '23', delta: '▲ 5 sin procesar' },
+      { label: 'Visitas a tu tienda', value: '1.204', delta: '▲ 8% esta semana' },
+      { label: 'Valoración', value: '4.8 ★', delta: '312 reseñas' },
+    ];
+
+    const orders = [
+      { id: '#10231', cliente: 'María G.', producto: 'Auriculares BT', monto: 'Gs. 350.000', estado: 'Pagado', estadoColor: '#1f8a52' },
+      { id: '#10230', cliente: 'Carlos R.', producto: 'Smart TV 43"', monto: 'Gs. 1.890.000', estado: 'A preparar', estadoColor: '#c77d18' },
+      { id: '#10229', cliente: 'Lucía B.', producto: 'Set de mate', monto: 'Gs. 165.000', estado: 'Enviado', estadoColor: '#1a73c7' },
+      { id: '#10228', cliente: 'Diego F.', producto: 'Cafetera express', monto: 'Gs. 1.120.000', estado: 'Pagado', estadoColor: '#1f8a52' },
+    ];
+
+    const myProducts = [
+      { nombre: 'Auriculares Bluetooth con cancelación de ruido', precio: 'Gs. 350.000', stock: '48 u.', estado: 'Activo', estadoBg: '#e7f4ec', estadoColor: '#1f8a52' },
+      { nombre: 'Smart TV 43" 4K Ultra HD Google TV', precio: 'Gs. 1.890.000', stock: '12 u.', estado: 'Activo', estadoBg: '#e7f4ec', estadoColor: '#1f8a52' },
+      { nombre: 'Set de mate premium con bombilla', precio: 'Gs. 165.000', stock: '0 u.', estado: 'Sin stock', estadoBg: '#fbe9ec', estadoColor: '#c4314b' },
+      { nombre: 'Cafetera express semiautomática 20 bar', precio: 'Gs. 1.120.000', stock: '7 u.', estado: 'Activo', estadoBg: '#e7f4ec', estadoColor: '#1f8a52' },
+      { nombre: 'Smartwatch deportivo con GPS', precio: 'Gs. 430.000', stock: '—', estado: 'Borrador', estadoBg: '#eef0f2', estadoColor: '#5f6b78' },
+    ];
+
+    return {
+      isBuyer: s.screen === 'home' || s.screen === 'product',
+      isHome: s.screen === 'home',
+      isProduct: s.screen === 'product',
+      isSeller: s.screen === 'seller',
+      cartLabel: String(s.cart),
+      qtyLabel: String(s.qty),
+      tabHome: this.tab('home'),
+      tabProduct: this.tab('product'),
+      tabSeller: this.tab('seller'),
+      goHome: () => { this.setState({ screen: 'home' }); window.scrollTo(0, 0); },
+      goProduct: () => { this.setState({ screen: 'product' }); window.scrollTo(0, 0); },
+      goSeller: () => { this.setState({ screen: 'seller' }); window.scrollTo(0, 0); },
+      addOne: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState(st => ({ cart: st.cart + 1 })); },
+      addQty: () => this.setState(st => ({ cart: st.cart + st.qty })),
+      incQty: () => this.setState(st => ({ qty: st.qty + 1 })),
+      decQty: () => this.setState(st => ({ qty: Math.max(1, st.qty - 1) })),
+      products, categories, metrics, orders, myProducts,
+    };
+  }
+}
+</script>
+</body>
+</html>

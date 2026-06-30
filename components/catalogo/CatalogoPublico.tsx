@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { ShoppingCart, Plus, Minus, MessageCircle, Search, X } from "lucide-react";
+import { ShoppingCart, Plus, Minus, MessageCircle, Search, X, MapPin } from "lucide-react";
 import { formatGS } from "@/lib/utils";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { createClient } from "@/lib/supabase/client";
@@ -216,7 +216,7 @@ export default function CatalogoPublico({
                   {catalogo.descripcion}
                 </p>
               )}
-              <div className="flex gap-5 mt-3">
+              <div className="flex flex-wrap gap-4 mt-3">
                 <span className="text-[13px]" style={{ color: "#c5d6e6" }}>
                   <strong className="text-white">{todosProductos.length}</strong> productos
                 </span>
@@ -224,6 +224,12 @@ export default function CatalogoPublico({
                   <span className="text-[13px]" style={{ color: "#c5d6e6" }}>
                     <strong className="text-white">{categorias.length}</strong>{" "}
                     {categorias.length === 1 ? "categoría" : "categorías"}
+                  </span>
+                )}
+                {comercio.direccion && (
+                  <span className="flex items-center gap-1 text-[13px]" style={{ color: "#c5d6e6" }}>
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    {comercio.direccion}
                   </span>
                 )}
               </div>
@@ -457,6 +463,14 @@ function ProductoCard({
             style={{ background: "#c4314b", color: "#fff" }}
           >
             Más vendido
+          </span>
+        )}
+        {Array.isArray(producto.imagenes_adicionales) && producto.imagenes_adicionales.length > 0 && (
+          <span
+            className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-[5px] text-[10px] font-bold"
+            style={{ background: "rgba(0,0,0,0.55)", color: "#fff" }}
+          >
+            +{(producto.imagenes_adicionales as string[]).length} fotos
           </span>
         )}
         {!producto.disponible && (

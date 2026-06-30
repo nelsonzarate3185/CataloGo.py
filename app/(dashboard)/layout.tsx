@@ -24,7 +24,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-sage-100 flex">
-      <DashboardNav comercioNombre={comercio.nombre} comercioSlug={comercio.slug} />
+      <DashboardNav comercioNombre={comercio.nombre} comercioSlug={comercio.slug} comercioPlan={comercio.plan} />
       <main className="flex-1 p-7 overflow-auto">{children}</main>
     </div>
   );

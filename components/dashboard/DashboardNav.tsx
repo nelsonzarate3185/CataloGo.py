@@ -12,9 +12,11 @@ import {
   LogOut,
   ExternalLink,
   Plus,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import type { PlanTipo } from "@/types/database";
 
 const navItems = [
   { href: "/dashboard", label: "Resumen", icon: LayoutDashboard, exact: true },
@@ -28,9 +30,10 @@ const navItems = [
 interface Props {
   comercioNombre: string;
   comercioSlug: string;
+  comercioPlan: PlanTipo;
 }
 
-export default function DashboardNav({ comercioNombre, comercioSlug }: Props) {
+export default function DashboardNav({ comercioNombre, comercioSlug, comercioPlan }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -71,14 +74,25 @@ export default function DashboardNav({ comercioNombre, comercioSlug }: Props) {
                   : "text-[#c5d0db] hover:bg-navy-800"
               )}
             >
-              <Icon
-                className="w-[18px] h-[18px] shrink-0"
-                strokeWidth={2}
-              />
+              <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
               {label}
             </Link>
           );
         })}
+        {comercioPlan === "business" && (
+          <Link
+            href="/dashboard/sucursales"
+            className={cn(
+              "flex items-center gap-[11px] px-3 py-[10px] rounded-[9px] text-[14px] font-semibold transition-colors",
+              isActive("/dashboard/sucursales")
+                ? "bg-primary text-navy-950"
+                : "text-[#c5d0db] hover:bg-navy-800"
+            )}
+          >
+            <MapPin className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+            Sucursales
+          </Link>
+        )}
       </nav>
 
       {/* Footer */}

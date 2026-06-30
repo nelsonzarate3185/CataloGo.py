@@ -23,6 +23,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { formatGS } from "@/lib/utils";
 import type { Producto, Catalogo, Categoria, PlanTipo } from "@/types/database";
+import { ILIMITADO } from "@/types/database";
 import ProductoModal from "./ProductoModal";
 
 interface Props {
@@ -32,6 +33,7 @@ interface Props {
   comercioId: string;
   plan: PlanTipo;
   limiteProductos: number;
+  limiteImagenes: number;
 }
 
 export default function ProductosClient({
@@ -41,6 +43,7 @@ export default function ProductosClient({
   comercioId,
   plan,
   limiteProductos,
+  limiteImagenes,
 }: Props) {
   const router = useRouter();
   const supabase = createClient();
@@ -51,7 +54,7 @@ export default function ProductosClient({
   const sensors = useSensors(useSensor(PointerSensor));
 
   const puedeAgregar =
-    limiteProductos === Infinity ||
+    limiteProductos >= ILIMITADO ||
     productos.filter((p) => p.disponible).length < limiteProductos;
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -178,6 +181,7 @@ export default function ProductosClient({
           catalogos={catalogos}
           categorias={categorias}
           comercioId={comercioId}
+          limiteImagenes={limiteImagenes}
           onClose={() => { setModalOpen(false); setEditando(null); }}
           onSaved={handleSaved}
         />

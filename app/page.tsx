@@ -117,29 +117,37 @@ export default function LandingPage() {
         <h2 className="font-heading text-[28px] font-extrabold text-center text-foreground mb-10">
           Planes simples, en guaraníes
         </h2>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
               name: "Básico",
               price: "Gratis",
               sub: "Siempre gratis",
-              features: ["Hasta 30 productos", "1 catálogo", "Link y código QR"],
+              features: ["5 productos", "1 catálogo", "1 imagen por producto", "Link y código QR"],
               cta: "Empezar gratis",
               highlight: false,
             },
             {
               name: "Pro",
-              price: "Gs. 120.000",
+              price: `Gs. ${new Intl.NumberFormat("es-PY").format(30000)}`,
               sub: "por mes",
-              features: ["Productos ilimitados", "3 catálogos", "Estadísticas de visitas"],
-              cta: "Empezar gratis",
+              features: ["30 productos", "2 catálogos", "3 imágenes por producto", "Link y código QR"],
+              cta: "Empezar",
+              highlight: false,
+            },
+            {
+              name: "Plus",
+              price: `Gs. ${new Intl.NumberFormat("es-PY").format(120000)}`,
+              sub: "por mes",
+              features: ["90 productos", "3 catálogos", "3 imágenes por producto", "Estadísticas"],
+              cta: "Empezar",
               highlight: true,
             },
             {
               name: "Business",
-              price: "Gs. 280.000",
+              price: `Gs. ${new Intl.NumberFormat("es-PY").format(200000)}`,
               sub: "por mes",
-              features: ["Todo lo de Pro", "Dominio propio", "Sucursales ilimitadas"],
+              features: ["Productos ilimitados", "Catálogos ilimitados", "5 imágenes/producto", "Hasta 5 sucursales"],
               cta: "Contactar",
               highlight: false,
             },
@@ -159,7 +167,7 @@ export default function LandingPage() {
               )}
               <h3 className="font-heading text-[20px] font-extrabold text-foreground">{plan.name}</h3>
               <div className="mt-2 mb-4">
-                <span className="font-heading text-[26px] font-extrabold text-foreground">{plan.price}</span>
+                <span className="font-heading text-[22px] font-extrabold text-foreground">{plan.price}</span>
                 <span className="text-[13px] text-muted-foreground ml-1">{plan.sub}</span>
               </div>
               <ul className="space-y-2 flex-1 mb-6">

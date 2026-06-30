@@ -39,7 +39,9 @@ export default async function ProductosPage() {
   const catalogos = catalogosRes.data ?? [];
   const categorias = categoriasRes.data ?? [];
   const limite = PLAN_LIMITES[comercio.plan].productos;
+  const limiteImagenes = PLAN_LIMITES[comercio.plan].imagenes;
   const totalActivos = productos.filter((p) => p.disponible).length;
+  const limiteAlcanzado = limite < Number.MAX_SAFE_INTEGER && totalActivos >= limite;
 
   return (
     <div>
@@ -48,18 +50,18 @@ export default async function ProductosPage() {
           <h1 className="text-2xl font-bold text-gray-900">Productos</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {productos.length} producto{productos.length !== 1 ? "s" : ""}
-            {limite !== Infinity && ` · límite: ${limite}`}
+            {limite < Number.MAX_SAFE_INTEGER && ` · ${totalActivos}/${limite} activos`}
           </p>
         </div>
       </div>
 
-      {comercio.plan === "basico" && totalActivos >= limite && (
+      {limiteAlcanzado && (
         <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
           <span className="text-amber-800">
-            Alcanzaste el límite de {limite} productos del plan gratuito.{" "}
+            Alcanzaste el límite de {limite} productos de tu plan.{" "}
             <a href="/dashboard/configuracion#plan" className="font-semibold underline">
-              Upgradear a Pro
+              Mejorar plan
             </a>
           </span>
         </div>
@@ -72,6 +74,7 @@ export default async function ProductosPage() {
         comercioId={comercio.id}
         plan={comercio.plan}
         limiteProductos={limite}
+        limiteImagenes={limiteImagenes}
       />
     </div>
   );

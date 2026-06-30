@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import type { PlanTipo } from "@/types/database";
 
 const PRECIOS_MP: Record<Exclude<PlanTipo, "basico">, { monto: number; nombre: string }> = {
-  pro: { monto: 120000, nombre: "CataloGo Pro" },
-  business: { monto: 280000, nombre: "CataloGo Business" },
+  pro:      { monto: 30000,   nombre: "CataloGo Pro" },
+  plus:     { monto: 120000,  nombre: "CataloGo Plus" },
+  business: { monto: 200000,  nombre: "CataloGo Business" },
 };
 
 export async function POST(request: NextRequest) {
@@ -35,6 +36,10 @@ export async function POST(request: NextRequest) {
 
   const precioInfo = PRECIOS_MP[plan as Exclude<PlanTipo, "basico">];
 
+  if (!precioInfo) {
+    return NextResponse.json({ error: "Plan inválido" }, { status: 400 });
+  }
+
   const mpRes = await fetch("https://api.mercadopago.com/preapproval", {
     method: "POST",
     headers: {
@@ -56,8 +61,6 @@ export async function POST(request: NextRequest) {
   });
 
   if (!mpRes.ok) {
-    const err = await mpRes.text();
-    console.error("MercadoPago error:", err);
     return NextResponse.json({ error: "Error al crear suscripción" }, { status: 502 });
   }
 

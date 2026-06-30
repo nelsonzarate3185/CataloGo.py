@@ -1,7 +1,7 @@
 import type { Catalogo, Categoria, Producto, Comercio } from "./database";
 
 export interface CatalogoConRelaciones extends Catalogo {
-  comercios: Pick<Comercio, "id" | "nombre" | "whatsapp" | "logo_url" | "plan">;
+  comercios: Pick<Comercio, "id" | "nombre" | "whatsapp" | "logo_url" | "plan" | "direccion">;
   categorias: Categoria[];
   productos: Producto[];
 }

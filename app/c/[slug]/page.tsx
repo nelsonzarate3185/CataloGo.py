@@ -52,7 +52,7 @@ export default async function CatalogoPage({ params }: Props) {
 
   const { data: comercioData } = await supabase
     .from("comercios")
-    .select("id, nombre, whatsapp, logo_url, plan, activo")
+    .select("id, nombre, whatsapp, logo_url, plan, activo, direccion")
     .eq("slug", slug)
     .eq("activo", true)
     .single();

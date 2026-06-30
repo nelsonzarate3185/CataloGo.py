@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { formatGS } from "@/lib/utils";
@@ -28,28 +28,47 @@ interface Props {
   catalogos: Pick<Catalogo, "id" | "nombre">[];
   categorias: Categoria[];
   comercioId: string;
+  limiteImagenes: number;
   onClose: () => void;
   onSaved: (producto: Producto, isNew: boolean) => void;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function parseImagenesAdicionales(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return (raw as unknown[]).filter((v) => typeof v === "string") as string[];
+}
 
 export default function ProductoModal({
   producto,
   catalogos,
   categorias,
   comercioId,
+  limiteImagenes,
   onClose,
   onSaved,
 }: Props) {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
-  const [imagenPreview, setImagenPreview] = useState<string | null>(
+
+  const [imagenPrincipalPreview, setImagenPrincipalPreview] = useState<string | null>(
     producto?.imagen_url ?? null
   );
-  const [imagenFile, setImagenFile] = useState<File | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [imagenPrincipalFile, setImagenPrincipalFile] = useState<File | null>(null);
+
+  const [imagenesAdicionales, setImagenesAdicionales] = useState<string[]>(
+    parseImagenesAdicionales(producto?.imagenes_adicionales)
+  );
+  const [imagenesAdicionalesFiles, setImagenesAdicionalesFiles] = useState<(File | null)[]>(
+    () => parseImagenesAdicionales(producto?.imagenes_adicionales).map(() => null)
+  );
+
+  const fileRefPrincipal = useRef<HTMLInputElement>(null);
+  const fileRefsAdicionales = useRef<(HTMLInputElement | null)[]>([]);
+
+  const slotsAdicionales = limiteImagenes - 1;
 
   const {
     register,
@@ -70,42 +89,62 @@ export default function ProductoModal({
   });
 
   const catalogoSeleccionado = watch("catalogo_id");
-  const categoriasFiltradas = categorias.filter(
-    (c) => c.catalogo_id === catalogoSeleccionado
-  );
+  const categoriasFiltradas = categorias.filter((c) => c.catalogo_id === catalogoSeleccionado);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handlePrincipalChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error("Solo se permiten imágenes JPG, PNG o WEBP");
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error("La imagen no puede superar 10MB");
-      return;
-    }
-    setImagenFile(file);
-    setImagenPreview(URL.createObjectURL(file));
+    if (!ALLOWED_TYPES.includes(file.type)) { toast.error("Solo JPG, PNG o WEBP"); return; }
+    if (file.size > MAX_FILE_SIZE) { toast.error("Máximo 10MB por imagen"); return; }
+    setImagenPrincipalFile(file);
+    setImagenPrincipalPreview(URL.createObjectURL(file));
   }
 
-  async function uploadImagen(productoId: string): Promise<string | null> {
-    if (!imagenFile) return producto?.imagen_url ?? null;
+  function handleAdicionalChange(index: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!ALLOWED_TYPES.includes(file.type)) { toast.error("Solo JPG, PNG o WEBP"); return; }
+    if (file.size > MAX_FILE_SIZE) { toast.error("Máximo 10MB por imagen"); return; }
 
-    const ext = imagenFile.name.split(".").pop();
-    const path = `${comercioId}/${productoId}.${ext}`;
+    const preview = URL.createObjectURL(file);
+    setImagenesAdicionales((prev) => {
+      const next = [...prev];
+      next[index] = preview;
+      return next;
+    });
+    setImagenesAdicionalesFiles((prev) => {
+      const next = [...prev];
+      next[index] = file;
+      return next;
+    });
+  }
 
-    const { error } = await supabase.storage
-      .from("productos")
-      .upload(path, imagenFile, { upsert: true });
+  function removeAdicional(index: number) {
+    setImagenesAdicionales((prev) => prev.filter((_, i) => i !== index));
+    setImagenesAdicionalesFiles((prev) => prev.filter((_, i) => i !== index));
+  }
 
-    if (error) {
-      toast.error("Error al subir la imagen: " + error.message);
-      return null;
-    }
-
+  async function uploadImagen(productoId: string, file: File, slot: string): Promise<string | null> {
+    const ext = file.name.split(".").pop();
+    const path = `${comercioId}/${productoId}${slot}.${ext}`;
+    const { error } = await supabase.storage.from("productos").upload(path, file, { upsert: true });
+    if (error) { toast.error("Error al subir imagen: " + error.message); return null; }
     const { data } = supabase.storage.from("productos").getPublicUrl(path);
     return data.publicUrl;
+  }
+
+  async function buildImagenesAdicionales(productoId: string): Promise<string[]> {
+    const result: string[] = [];
+    for (let i = 0; i < imagenesAdicionales.length; i++) {
+      const file = imagenesAdicionalesFiles[i];
+      if (file) {
+        const url = await uploadImagen(productoId, file, `-adicional-${i}`);
+        if (url) result.push(url);
+      } else if (imagenesAdicionales[i] && !imagenesAdicionales[i].startsWith("blob:")) {
+        result.push(imagenesAdicionales[i]);
+      }
+    }
+    return result;
   }
 
   async function onSubmit(data: Form) {
@@ -114,7 +153,6 @@ export default function ProductoModal({
       const isNew = !producto;
 
       if (isNew) {
-        // Crear primero para obtener el ID
         const { data: created, error } = await supabase
           .from("productos")
           .insert({
@@ -130,24 +168,27 @@ export default function ProductoModal({
           .select()
           .single();
 
-        if (error || !created) {
-          toast.error("Error al crear el producto");
-          return;
-        }
+        if (error || !created) { toast.error("Error al crear el producto"); return; }
 
-        const imagen_url = await uploadImagen(created.id);
+        const imagen_url = imagenPrincipalFile
+          ? await uploadImagen(created.id, imagenPrincipalFile, "")
+          : created.imagen_url;
 
-        if (imagen_url && imagen_url !== created.imagen_url) {
-          await supabase
-            .from("productos")
-            .update({ imagen_url })
-            .eq("id", created.id);
-        }
+        const adicionales = await buildImagenesAdicionales(created.id);
+
+        await supabase.from("productos").update({
+          imagen_url: imagen_url ?? null,
+          imagenes_adicionales: adicionales,
+        }).eq("id", created.id);
 
         toast.success("Producto creado");
-        onSaved({ ...created, imagen_url: imagen_url ?? created.imagen_url }, true);
+        onSaved({ ...created, imagen_url: imagen_url ?? null, imagenes_adicionales: adicionales }, true);
       } else {
-        const imagen_url = await uploadImagen(producto.id);
+        const imagen_url = imagenPrincipalFile
+          ? await uploadImagen(producto.id, imagenPrincipalFile, "")
+          : producto.imagen_url;
+
+        const adicionales = await buildImagenesAdicionales(producto.id);
 
         const { data: updated, error } = await supabase
           .from("productos")
@@ -160,16 +201,13 @@ export default function ProductoModal({
             disponible: data.disponible,
             destacado: data.destacado,
             imagen_url: imagen_url ?? producto.imagen_url,
+            imagenes_adicionales: adicionales,
           })
           .eq("id", producto.id)
           .select()
           .single();
 
-        if (error || !updated) {
-          toast.error("Error al actualizar el producto");
-          return;
-        }
-
+        if (error || !updated) { toast.error("Error al actualizar el producto"); return; }
         toast.success("Producto actualizado");
         onSaved(updated, false);
       }
@@ -191,23 +229,18 @@ export default function ProductoModal({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-          {/* Imagen */}
+          {/* Imagen principal */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Imagen del producto
+              Imagen principal
             </label>
             <div
-              onClick={() => fileRef.current?.click()}
+              onClick={() => fileRefPrincipal.current?.click()}
               className="border-2 border-dashed rounded-xl cursor-pointer hover:border-primary transition-colors overflow-hidden"
             >
-              {imagenPreview ? (
+              {imagenPrincipalPreview ? (
                 <div className="relative h-40">
-                  <Image
-                    src={imagenPreview}
-                    alt="Preview"
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={imagenPrincipalPreview} alt="Preview" fill className="object-cover" />
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                     <Upload className="w-6 h-6 text-white" />
                   </div>
@@ -215,58 +248,96 @@ export default function ProductoModal({
               ) : (
                 <div className="h-32 flex flex-col items-center justify-center text-gray-400 gap-2">
                   <Upload className="w-6 h-6" />
-                  <p className="text-xs">
-                    JPG, PNG o WEBP · máx 10MB
-                  </p>
+                  <p className="text-xs">JPG, PNG o WEBP · máx 10MB</p>
                 </div>
               )}
             </div>
             <input
-              ref={fileRef}
+              ref={fileRefPrincipal}
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
-              onChange={handleFileChange}
+              onChange={handlePrincipalChange}
             />
           </div>
 
+          {/* Imágenes adicionales */}
+          {slotsAdicionales > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Imágenes adicionales
+                <span className="ml-1 text-xs text-gray-400 font-normal">
+                  (hasta {slotsAdicionales} según tu plan)
+                </span>
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {Array.from({ length: slotsAdicionales }).map((_, i) => {
+                  const preview = imagenesAdicionales[i];
+                  return (
+                    <div key={i} className="relative">
+                      <div
+                        onClick={() => !preview && fileRefsAdicionales.current[i]?.click()}
+                        className={`w-20 h-20 rounded-lg border-2 border-dashed overflow-hidden flex items-center justify-center ${
+                          preview ? "border-sage-300" : "border-gray-200 cursor-pointer hover:border-primary"
+                        }`}
+                        style={{ background: "#f3f5f1" }}
+                      >
+                        {preview ? (
+                          <Image src={preview} alt={`Adicional ${i + 1}`} fill className="object-cover" />
+                        ) : (
+                          <Upload className="w-5 h-5 text-gray-300" />
+                        )}
+                      </div>
+                      {preview && (
+                        <button
+                          type="button"
+                          onClick={() => removeAdicional(i)}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                      <input
+                        ref={(el) => { fileRefsAdicionales.current[i] = el; }}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={(e) => handleAdicionalChange(i, e)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Catálogo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Catálogo *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Catálogo *</label>
             <select
               {...register("catalogo_id")}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {catalogos.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
+                <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
             {errors.catalogo_id && (
-              <p className="text-xs text-red-500 mt-1">
-                {errors.catalogo_id.message}
-              </p>
+              <p className="text-xs text-red-500 mt-1">{errors.catalogo_id.message}</p>
             )}
           </div>
 
           {/* Categoría */}
           {categoriasFiltradas.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Categoría (opcional)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Categoría (opcional)</label>
               <select
                 {...register("categoria_id")}
                 className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Sin categoría</option>
                 {categoriasFiltradas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
                 ))}
               </select>
             </div>
@@ -274,25 +345,19 @@ export default function ProductoModal({
 
           {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
             <input
               {...register("nombre")}
               type="text"
               placeholder="Ej: Coca-Cola 2L"
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {errors.nombre && (
-              <p className="text-xs text-red-500 mt-1">{errors.nombre.message}</p>
-            )}
+            {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre.message}</p>}
           </div>
 
           {/* Descripción */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Descripción (opcional)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (opcional)</label>
             <textarea
               {...register("descripcion")}
               rows={2}
@@ -303,9 +368,7 @@ export default function ProductoModal({
 
           {/* Precio */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Precio (Gs.) *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Precio (Gs.) *</label>
             <input
               {...register("precio")}
               type="number"
@@ -314,32 +377,20 @@ export default function ProductoModal({
               placeholder="0"
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {errors.precio && (
-              <p className="text-xs text-red-500 mt-1">{errors.precio.message}</p>
-            )}
+            {errors.precio && <p className="text-xs text-red-500 mt-1">{errors.precio.message}</p>}
             {watch("precio") > 0 && (
-              <p className="text-xs text-gray-400 mt-1">
-                {formatGS(watch("precio"))}
-              </p>
+              <p className="text-xs text-gray-400 mt-1">{formatGS(watch("precio"))}</p>
             )}
           </div>
 
           {/* Switches */}
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                {...register("disponible")}
-                type="checkbox"
-                className="w-4 h-4 accent-primary"
-              />
+              <input {...register("disponible")} type="checkbox" className="w-4 h-4 accent-primary" />
               <span className="text-sm text-gray-700">Disponible</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                {...register("destacado")}
-                type="checkbox"
-                className="w-4 h-4 accent-primary"
-              />
+              <input {...register("destacado")} type="checkbox" className="w-4 h-4 accent-primary" />
               <span className="text-sm text-gray-700">Destacado</span>
             </label>
           </div>
