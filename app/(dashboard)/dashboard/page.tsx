@@ -91,7 +91,9 @@ export default async function DashboardPage() {
   const host = reqHeaders.get("host") ?? "";
   const proto = reqHeaders.get("x-forwarded-proto") ?? "https";
   const dynamicBase = host ? `${proto}://${host}` : "";
-  const catalogoUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? dynamicBase}/c/${comercio.slug}`;
+  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? dynamicBase;
+  const appUrl = rawAppUrl.startsWith("http") ? rawAppUrl : `https://${rawAppUrl}`;
+  const catalogoUrl = `${appUrl}/c/${comercio.slug}`;
 
   const fechaHoy = new Date().toLocaleDateString("es-PY", {
     weekday: "long",
