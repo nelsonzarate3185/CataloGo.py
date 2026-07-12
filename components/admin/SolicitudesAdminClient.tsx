@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Check, X, Search } from "lucide-react";
+import { approveRequest, rejectRequest } from "@/app/admin/actions";
 import type { PlanRequestStatus } from "@/types/database";
 
 type SolicitudRow = {
@@ -28,10 +29,10 @@ function getPlanId(data: unknown): string {
   return "—";
 }
 
-function getComercioId(data: unknown): string | undefined {
+function getCurrentPlan(data: unknown): string | undefined {
   if (typeof data === "object" && data !== null) {
     const d = data as Record<string, unknown>;
-    return d.comercio_id as string | undefined;
+    return d.current_plan as string | undefined;
   }
   return undefined;
 }
@@ -43,6 +44,7 @@ export default function SolicitudesAdminClient({ solicitudes: initial }: Props) 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PlanRequestStatus | "todos">("pending");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const filtered = solicitudes.filter((s) => {
     const email = s.user?.email ?? s.vendor_id;
@@ -53,41 +55,32 @@ export default function SolicitudesAdminClient({ solicitudes: initial }: Props) 
     return matchSearch && matchStatus;
   });
 
-  async function handleAction(s: SolicitudRow, action: "approve" | "reject") {
+  function handleAction(s: SolicitudRow, action: "approve" | "reject") {
     setLoadingId(s.id);
     const planId = getPlanId(s.data);
-    const comercioId = getComercioId(s.data);
+    const newStatus = action === "approve" ? "approved" : "rejected";
 
-    try {
-      const res = await fetch("/api/admin/solicitudes", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requestId: s.id,
-          action,
-          planId: planId !== "—" ? planId : undefined,
-          comercioId,
-          vendorId: s.vendor_id,
-        }),
-      });
-
-      const result = await res.json() as { success?: boolean; error?: string; status?: string };
-
-      if (!res.ok || !result.success) {
-        toast.error(result.error ?? "Error al procesar la solicitud");
-        return;
+    startTransition(async () => {
+      try {
+        if (action === "approve") {
+          await approveRequest(s.id, s.vendor_id, planId !== "—" ? planId : "");
+        } else {
+          await rejectRequest(s.id);
+        }
+        setSolicitudes((prev) =>
+          prev.map((r) => r.id === s.id ? { ...r, status: newStatus } : r)
+        );
+        toast.success(
+          action === "approve"
+            ? "Solicitud aprobada y plan actualizado"
+            : "Solicitud rechazada"
+        );
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Error al procesar la solicitud");
+      } finally {
+        setLoadingId(null);
       }
-
-      const newStatus = result.status ?? (action === "approve" ? "approved" : "rejected");
-      setSolicitudes((prev) =>
-        prev.map((r) => r.id === s.id ? { ...r, status: newStatus } : r)
-      );
-      toast.success(action === "approve" ? "✅ Solicitud aprobada y plan actualizado" : "❌ Solicitud rechazada");
-    } catch {
-      toast.error("Error de red al procesar la solicitud");
-    } finally {
-      setLoadingId(null);
-    }
+    });
   }
 
   return (
@@ -140,7 +133,7 @@ export default function SolicitudesAdminClient({ solicitudes: initial }: Props) 
               {filtered.map((s) => {
                 const info = statusInfo[s.status] ?? { label: s.status, color: "bg-gray-100 text-gray-600" };
                 const planId = getPlanId(s.data);
-                const currentPlan = (s.data as Record<string, unknown>)?.current_plan as string | undefined;
+                const currentPlan = getCurrentPlan(s.data);
                 const isLoading = loadingId === s.id;
                 return (
                   <tr key={s.id} className="hover:bg-gray-50 transition-colors">

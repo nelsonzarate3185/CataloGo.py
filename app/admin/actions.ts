@@ -66,14 +66,17 @@ export async function deletePlan(id: string) {
 export async function approveRequest(requestId: string, vendorId: string, planId: string) {
   const admin = await requireAdmin();
 
-  // 1. Marcar la solicitud como aprobada
-  const { error: reqError, count } = await admin
+  // 1. Marcar la solicitud como aprobada y verificar que se actualizó
+  const { data: updated, error: reqError } = await admin
     .from("plan_requests")
     .update({ status: "approved" })
     .eq("id", requestId)
     .select();
 
   if (reqError) throw new Error(`Error al aprobar: ${reqError.message}`);
+  if (!updated || updated.length === 0) {
+    throw new Error(`No se encontró la solicitud con id: ${requestId}`);
+  }
 
   // 2. Actualizar el plan en comercios usando el comercio_id guardado en data
   if (planId) {
@@ -108,11 +111,15 @@ export async function approveRequest(requestId: string, vendorId: string, planId
 
 export async function rejectRequest(requestId: string) {
   const admin = await requireAdmin();
-  const { error } = await admin
+  const { data: updated, error } = await admin
     .from("plan_requests")
     .update({ status: "rejected" })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .select();
   if (error) throw new Error(error.message);
+  if (!updated || updated.length === 0) {
+    throw new Error(`No se encontró la solicitud con id: ${requestId}`);
+  }
   revalidatePath("/admin/solicitudes");
 }
 
