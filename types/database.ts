@@ -9,6 +9,9 @@ export type Json =
 export type PlanTipo = "basico" | "pro" | "plus" | "business";
 export type PlanEstado = "activo" | "cancelado" | "vencido";
 export type PedidoEstado = "pendiente" | "confirmado" | "entregado" | "cancelado";
+export type UserStatus = "pending_approval" | "active" | "blocked" | "blocked_unpaid" | "suspended";
+export type UserRole = "admin" | "buyer" | "super_admin";
+export type PlanRequestStatus = "pending" | "approved" | "rejected";
 
 export type Database = {
   public: {
@@ -237,21 +240,78 @@ export type Database = {
       };
       users: {
         Row: {
+          uid: string;
+          email: string;
+          slug: string | null;
+          business_name: string | null;
+          role: UserRole;
+          status: UserStatus;
+          data: Json;
+          created_at: string;
+        };
+        Insert: {
+          uid: string;
+          email: string;
+          slug?: string | null;
+          business_name?: string | null;
+          role?: UserRole;
+          status?: UserStatus;
+          data?: Json;
+          created_at?: string;
+        };
+        Update: {
+          uid?: string;
+          email?: string;
+          slug?: string | null;
+          business_name?: string | null;
+          role?: UserRole;
+          status?: UserStatus;
+          data?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      plans: {
+        Row: {
           id: string;
-          email: string | null;
-          role: string | null;
+          name: string;
+          price: number;
+          data: Json;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          price?: number;
+          data?: Json;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          price?: number;
+          data?: Json;
+        };
+        Relationships: [];
+      };
+      plan_requests: {
+        Row: {
+          id: string;
+          vendor_id: string;
+          status: PlanRequestStatus;
+          data: Json;
           created_at: string;
         };
         Insert: {
           id: string;
-          email?: string | null;
-          role?: string | null;
+          vendor_id: string;
+          status?: PlanRequestStatus;
+          data?: Json;
           created_at?: string;
         };
         Update: {
           id?: string;
-          email?: string | null;
-          role?: string | null;
+          vendor_id?: string;
+          status?: PlanRequestStatus;
+          data?: Json;
           created_at?: string;
         };
         Relationships: [];
@@ -313,6 +373,9 @@ export type Producto = Database["public"]["Tables"]["productos"]["Row"];
 export type Pedido = Database["public"]["Tables"]["pedidos"]["Row"];
 export type Suscripcion = Database["public"]["Tables"]["suscripciones"]["Row"];
 export type Sucursal = Database["public"]["Tables"]["sucursales"]["Row"];
+export type AppUser = Database["public"]["Tables"]["users"]["Row"];
+export type Plan = Database["public"]["Tables"]["plans"]["Row"];
+export type PlanRequest = Database["public"]["Tables"]["plan_requests"]["Row"];
 
 export type PlanLimites = {
   productos: number;
