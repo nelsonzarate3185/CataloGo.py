@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Plus,
   MapPin,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -31,9 +32,10 @@ interface Props {
   comercioNombre: string;
   comercioSlug: string;
   comercioPlan: PlanTipo;
+  isSuperAdmin?: boolean;
 }
 
-export default function DashboardNav({ comercioNombre, comercioSlug, comercioPlan }: Props) {
+export default function DashboardNav({ comercioNombre, comercioSlug, comercioPlan, isSuperAdmin }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -79,6 +81,7 @@ export default function DashboardNav({ comercioNombre, comercioSlug, comercioPla
             </Link>
           );
         })}
+
         {comercioPlan === "business" && (
           <Link
             href="/dashboard/sucursales"
@@ -91,6 +94,21 @@ export default function DashboardNav({ comercioNombre, comercioSlug, comercioPla
           >
             <MapPin className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
             Sucursales
+          </Link>
+        )}
+
+        {isSuperAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center gap-[11px] px-3 py-[10px] rounded-[9px] text-[14px] font-semibold transition-colors mt-2 border border-orange-500/30",
+              isActive("/admin")
+                ? "bg-orange-500 text-white"
+                : "text-orange-400 hover:bg-orange-500/10"
+            )}
+          >
+            <Shield className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+            Consola Admin
           </Link>
         )}
       </nav>
