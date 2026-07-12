@@ -16,7 +16,7 @@ export default async function DashboardLayout({
 
   const [{ data: comercio }, { data: userRecord }] = await Promise.all([
     supabase.from("comercios").select("id, nombre, slug, plan").eq("user_id", user.id).single(),
-    supabase.from("users").select("role").eq("email", user.email).single(),
+    supabase.from("users").select("role").eq("email", user.email ?? "").single(),
   ]);
 
   if (!comercio) redirect("/registro");

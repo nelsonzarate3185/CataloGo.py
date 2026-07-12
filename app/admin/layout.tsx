@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: userRecord } = await supabase
     .from("users")
     .select("role")
-    .eq("email", user.email)
+    .eq("email", user.email ?? "")
     .single();
 
   if (userRecord?.role !== "super_admin") redirect("/dashboard");
