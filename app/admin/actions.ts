@@ -63,64 +63,72 @@ export async function deletePlan(id: string) {
 
 // ── Solicitudes ─────────────────────────────────────────────
 
-export async function approveRequest(requestId: string, vendorId: string, planId: string) {
-  const admin = await requireAdmin();
+type ActionResult = { ok: true } | { ok: false; error: string };
 
-  // 1. Marcar la solicitud como aprobada y verificar que se actualizó
-  const { data: updated, error: reqError } = await admin
-    .from("plan_requests")
-    .update({ status: "approved" })
-    .eq("id", requestId)
-    .select();
+export async function approveRequest(
+  requestId: string,
+  vendorId: string,
+  planId: string
+): Promise<ActionResult> {
+  try {
+    const admin = await requireAdmin();
 
-  if (reqError) throw new Error(`Error al aprobar: ${reqError.message}`);
-  if (!updated || updated.length === 0) {
-    throw new Error(`No se encontró la solicitud con id: ${requestId}`);
-  }
-
-  // 2. Actualizar el plan en comercios usando el comercio_id guardado en data
-  if (planId) {
-    // Primero intentamos con el comercio_id guardado en la solicitud
-    const { data: solicitud } = await admin
+    const { data: updated, error: reqError } = await admin
       .from("plan_requests")
-      .select("data")
+      .update({ status: "approved" })
       .eq("id", requestId)
-      .single();
+      .select();
 
-    const solicitudData = solicitud?.data as Record<string, unknown> | null;
-    const comercioId = solicitudData?.comercio_id as string | undefined;
-
-    if (comercioId) {
-      const { error: comercioError } = await admin
-        .from("comercios")
-        .update({ plan: planId as PlanTipo })
-        .eq("id", comercioId);
-      if (comercioError) throw new Error(`Plan aprobado pero error actualizando comercio: ${comercioError.message}`);
-    } else {
-      // Fallback: buscar por user_id = vendor_id
-      await admin
-        .from("comercios")
-        .update({ plan: planId as PlanTipo })
-        .eq("user_id", vendorId);
+    if (reqError) return { ok: false, error: `Error al aprobar: ${reqError.message}` };
+    if (!updated || updated.length === 0) {
+      return { ok: false, error: `Solicitud no encontrada (id: ${requestId})` };
     }
-  }
 
-  revalidatePath("/admin/solicitudes");
-  revalidatePath("/admin/comercios");
+    if (planId) {
+      const solicitudData = (updated[0]?.data ?? {}) as Record<string, unknown>;
+      const comercioId = solicitudData.comercio_id as string | undefined;
+
+      if (comercioId) {
+        const { error: comercioError } = await admin
+          .from("comercios")
+          .update({ plan: planId as PlanTipo })
+          .eq("id", comercioId);
+        if (comercioError) {
+          return { ok: false, error: `Solicitud aprobada pero error actualizando plan: ${comercioError.message}` };
+        }
+      } else {
+        await admin
+          .from("comercios")
+          .update({ plan: planId as PlanTipo })
+          .eq("user_id", vendorId);
+      }
+    }
+
+    revalidatePath("/admin/solicitudes");
+    revalidatePath("/admin/comercios");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Error desconocido" };
+  }
 }
 
-export async function rejectRequest(requestId: string) {
-  const admin = await requireAdmin();
-  const { data: updated, error } = await admin
-    .from("plan_requests")
-    .update({ status: "rejected" })
-    .eq("id", requestId)
-    .select();
-  if (error) throw new Error(error.message);
-  if (!updated || updated.length === 0) {
-    throw new Error(`No se encontró la solicitud con id: ${requestId}`);
+export async function rejectRequest(requestId: string): Promise<ActionResult> {
+  try {
+    const admin = await requireAdmin();
+    const { data: updated, error } = await admin
+      .from("plan_requests")
+      .update({ status: "rejected" })
+      .eq("id", requestId)
+      .select();
+    if (error) return { ok: false, error: error.message };
+    if (!updated || updated.length === 0) {
+      return { ok: false, error: `Solicitud no encontrada (id: ${requestId})` };
+    }
+    revalidatePath("/admin/solicitudes");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Error desconocido" };
   }
-  revalidatePath("/admin/solicitudes");
 }
 
 // ── Comercios ────────────────────────────────────────────────

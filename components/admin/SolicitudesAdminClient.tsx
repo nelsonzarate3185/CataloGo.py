@@ -61,25 +61,26 @@ export default function SolicitudesAdminClient({ solicitudes: initial }: Props) 
     const newStatus = action === "approve" ? "approved" : "rejected";
 
     startTransition(async () => {
-      try {
-        if (action === "approve") {
-          await approveRequest(s.id, s.vendor_id, planId !== "—" ? planId : "");
-        } else {
-          await rejectRequest(s.id);
-        }
-        setSolicitudes((prev) =>
-          prev.map((r) => r.id === s.id ? { ...r, status: newStatus } : r)
-        );
-        toast.success(
-          action === "approve"
-            ? "Solicitud aprobada y plan actualizado"
-            : "Solicitud rechazada"
-        );
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Error al procesar la solicitud");
-      } finally {
-        setLoadingId(null);
+      const result =
+        action === "approve"
+          ? await approveRequest(s.id, s.vendor_id, planId !== "—" ? planId : "")
+          : await rejectRequest(s.id);
+
+      setLoadingId(null);
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
       }
+
+      setSolicitudes((prev) =>
+        prev.map((r) => r.id === s.id ? { ...r, status: newStatus } : r)
+      );
+      toast.success(
+        action === "approve"
+          ? "Solicitud aprobada y plan actualizado"
+          : "Solicitud rechazada"
+      );
     });
   }
 
