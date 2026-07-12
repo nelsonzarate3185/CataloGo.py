@@ -64,15 +64,17 @@ const PLAN_NOMBRES: Record<PlanTipo, string> = {
 interface Props {
   comercio: Comercio;
   userEmail: string;
+  planPendiente?: PlanTipo | null;
 }
 
-export default function ConfiguracionClient({ comercio, userEmail }: Props) {
+export default function ConfiguracionClient({ comercio, userEmail, planPendiente }: Props) {
   const supabase = createClient();
   const [logoPreview, setLogoPreview] = useState<string | null>(comercio.logo_url);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loadingPerfil, setLoadingPerfil] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<PlanTipo | null>(null);
+  const [solicitudEnviada, setSolicitudEnviada] = useState<PlanTipo | null>(planPendiente ?? null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const perfilForm = useForm<PerfilForm>({
@@ -157,12 +159,13 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        toast.error(data.error ?? "Error al iniciar el pago");
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || !data.success) {
+        toast.error(data.error ?? "Error al enviar la solicitud");
         return;
       }
-      window.location.href = data.url;
+      setSolicitudEnviada(plan);
+      toast.success(`Solicitud para plan ${PLAN_NOMBRES[plan]} enviada. El administrador la activará pronto.`);
     } finally {
       setLoadingPlan(null);
     }
@@ -315,13 +318,19 @@ export default function ConfiguracionClient({ comercio, userEmail }: Props) {
                 </div>
               </div>
               {comercio.plan !== key && key !== "basico" && (
-                <button
-                  onClick={() => handleUpgradePlan(key)}
-                  disabled={loadingPlan === key}
-                  className="mt-3 w-full py-2 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary/90 disabled:opacity-60"
-                >
-                  {loadingPlan === key ? "Redirigiendo..." : `Pasarse a ${PLAN_NOMBRES[key]}`}
-                </button>
+                solicitudEnviada === key ? (
+                  <div className="mt-3 w-full py-2 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg text-xs font-semibold text-center">
+                    ⏳ Solicitud pendiente — el admin la activará pronto
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleUpgradePlan(key)}
+                    disabled={loadingPlan === key || solicitudEnviada !== null}
+                    className="mt-3 w-full py-2 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary/90 disabled:opacity-60"
+                  >
+                    {loadingPlan === key ? "Enviando solicitud..." : `Solicitar plan ${PLAN_NOMBRES[key]}`}
+                  </button>
+                )
               )}
             </div>
           ))}
