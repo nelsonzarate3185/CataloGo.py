@@ -239,19 +239,19 @@ export type Database = {
         Row: {
           id: string;
           email: string | null;
-          rol: string | null;
+          role: string | null;
           created_at: string;
         };
         Insert: {
           id: string;
           email?: string | null;
-          rol?: string | null;
+          role?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           email?: string | null;
-          rol?: string | null;
+          role?: string | null;
           created_at?: string;
         };
         Relationships: [];

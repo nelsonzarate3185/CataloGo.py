@@ -11,11 +11,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const { data: userRecord } = await supabase
     .from("users")
-    .select("rol")
+    .select("role")
     .eq("id", user.id)
     .single();
 
-  if (userRecord?.rol !== "super_admin") redirect("/dashboard");
+  if (userRecord?.role !== "super_admin") redirect("/dashboard");
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

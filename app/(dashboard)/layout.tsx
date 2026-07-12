@@ -16,12 +16,12 @@ export default async function DashboardLayout({
 
   const [{ data: comercio }, { data: userRecord }] = await Promise.all([
     supabase.from("comercios").select("id, nombre, slug, plan").eq("user_id", user.id).single(),
-    supabase.from("users").select("rol").eq("id", user.id).single(),
+    supabase.from("users").select("role").eq("id", user.id).single(),
   ]);
 
   if (!comercio) redirect("/registro");
 
-  const isSuperAdmin = userRecord?.rol === "super_admin";
+  const isSuperAdmin = userRecord?.role === "super_admin";
 
   return (
     <div className="min-h-screen bg-sage-100 flex">
