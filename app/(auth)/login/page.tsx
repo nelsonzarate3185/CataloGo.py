@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -31,7 +31,7 @@ const MENSAJES_ERROR: Record<string, string> = {
     "El enlace no es válido o ya venció. Los enlaces de recuperación duran una hora y se pueden usar una sola vez. Pedí uno nuevo.",
 };
 
-export default function LoginPage() {
+function FormularioLogin() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorEnlace = searchParams.get("error");
@@ -192,5 +192,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * `useSearchParams` obliga a un límite de Suspense: sin él, Next falla al
+ * prerenderizar esta página con "useSearchParams() should be wrapped in a
+ * suspense boundary". El formulario se renderiza igual en el cliente; el
+ * fallback sólo cubre el instante de hidratación.
+ */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <FormularioLogin />
+    </Suspense>
   );
 }
