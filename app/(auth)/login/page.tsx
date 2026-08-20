@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 
@@ -18,8 +18,23 @@ const schema = z.object({
 
 type Form = z.infer<typeof schema>;
 
+/**
+ * Motivos por los que el callback de autenticación puede devolver al login.
+ *
+ * Antes se llegaba acá con `?error=` y la página lo ignoraba, así que un enlace
+ * de recuperación vencido dejaba al usuario en un formulario de login sin
+ * ninguna explicación de por qué no llegó a cambiar su contraseña.
+ */
+const MENSAJES_ERROR: Record<string, string> = {
+  link_invalido:
+    "El enlace no es válido o ya venció. Los enlaces de recuperación duran una hora y se pueden usar una sola vez. Pedí uno nuevo.",
+};
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const errorEnlace = searchParams.get("error");
+  const mensajeError = errorEnlace ? MENSAJES_ERROR[errorEnlace] ?? null : null;
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const supabase = createClient();
@@ -77,6 +92,18 @@ export default function LoginPage() {
           <h1 className="font-heading text-[26px] font-extrabold text-foreground mb-1">
             Iniciá sesión
           </h1>
+
+          {mensajeError && (
+            <div
+              role="alert"
+              className="mb-4 mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[13px] text-destructive"
+            >
+              <p>{mensajeError}</p>
+              <Link href="/recuperar" className="mt-1 inline-block font-semibold underline">
+                Pedir un enlace nuevo
+              </Link>
+            </div>
+          )}
           <p className="text-[14px] text-muted-foreground mb-6">
             ¿No tenés cuenta?{" "}
             <Link href="/registro" className="font-semibold text-brand-blue hover:underline">
