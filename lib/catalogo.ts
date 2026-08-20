@@ -24,7 +24,18 @@ export const getCatalogoPorSlug = cache(
       .eq("activo", true)
       .single();
 
-    if (errorComercio || !comercio) return null;
+    // PGRST116 es "no se encontró ninguna fila", que para `.single()` significa
+    // que el slug no existe o el comercio está inactivo: eso sí es un 404.
+    // Cualquier otro error (RLS, conexión, esquema) tiene que propagarse. Si se
+    // devuelve null para todo, un fallo de infraestructura se vuelve
+    // indistinguible de una tienda inexistente y no hay forma de diagnosticarlo.
+    if (errorComercio && errorComercio.code !== "PGRST116") {
+      throw new Error(
+        `Error cargando el comercio "${slug}": ${errorComercio.message} (${errorComercio.code})`
+      );
+    }
+
+    if (!comercio) return null;
 
     const { data: catalogos, error: errorCatalogo } = await supabase
       .from("catalogos")
