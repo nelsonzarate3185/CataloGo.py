@@ -31,11 +31,36 @@ const MENSAJES_ERROR: Record<string, string> = {
     "El enlace no es válido o ya venció. Los enlaces de recuperación duran una hora y se pueden usar una sola vez. Pedí uno nuevo.",
 };
 
-function FormularioLogin() {
-  const router = useRouter();
+/**
+ * Aviso de por qué falló un enlace de autenticación.
+ *
+ * Aislado en su propio componente porque `useSearchParams` obliga a un límite
+ * de Suspense, y ese límite tiene que rodear sólo esto. Envolver el formulario
+ * entero hacía que el HTML inicial llegara vacío y el login apareciera recién
+ * al hidratar: un parpadeo en blanco innecesario sobre conexiones lentas.
+ */
+function AvisoErrorEnlace() {
   const searchParams = useSearchParams();
   const errorEnlace = searchParams.get("error");
-  const mensajeError = errorEnlace ? MENSAJES_ERROR[errorEnlace] ?? null : null;
+  const mensaje = errorEnlace ? MENSAJES_ERROR[errorEnlace] ?? null : null;
+
+  if (!mensaje) return null;
+
+  return (
+    <div
+      role="alert"
+      className="mb-4 mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[13px] text-destructive"
+    >
+      <p>{mensaje}</p>
+      <Link href="/recuperar" className="mt-1 inline-block font-semibold underline">
+        Pedir un enlace nuevo
+      </Link>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const supabase = createClient();
@@ -94,17 +119,9 @@ function FormularioLogin() {
             Iniciá sesión
           </h1>
 
-          {mensajeError && (
-            <div
-              role="alert"
-              className="mb-4 mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[13px] text-destructive"
-            >
-              <p>{mensajeError}</p>
-              <Link href="/recuperar" className="mt-1 inline-block font-semibold underline">
-                Pedir un enlace nuevo
-              </Link>
-            </div>
-          )}
+          <Suspense fallback={null}>
+            <AvisoErrorEnlace />
+          </Suspense>
           <p className="text-[14px] text-muted-foreground mb-6">
             ¿No tenés cuenta?{" "}
             <Link href="/registro" className="font-semibold text-brand-blue hover:underline">
@@ -192,19 +209,5 @@ function FormularioLogin() {
         </div>
       </div>
     </div>
-  );
-}
-
-/**
- * `useSearchParams` obliga a un límite de Suspense: sin él, Next falla al
- * prerenderizar esta página con "useSearchParams() should be wrapped in a
- * suspense boundary". El formulario se renderiza igual en el cliente; el
- * fallback sólo cubre el instante de hidratación.
- */
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
-      <FormularioLogin />
-    </Suspense>
   );
 }
