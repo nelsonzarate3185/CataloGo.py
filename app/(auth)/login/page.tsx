@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { urlCallbackAuth } from "@/lib/urls";
 
 const schema = z.object({
   email: z.string().email("Email inválido"),
@@ -64,7 +65,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: urlCallbackAuth(),
       },
     });
     if (error) {

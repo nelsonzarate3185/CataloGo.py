@@ -9,6 +9,7 @@ import { z } from "zod";
 import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { urlCallbackAuth } from "@/lib/urls";
 
 const schema = z.object({
   email: z.string().email("Email inválido"),
@@ -30,7 +31,7 @@ export default function RecuperarPage() {
   async function onSubmit(data: Form) {
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/api/auth/callback?next=/actualizar-password`,
+      redirectTo: urlCallbackAuth("/actualizar-password"),
     });
     setLoading(false);
     if (error) {
