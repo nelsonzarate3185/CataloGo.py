@@ -19,7 +19,7 @@ export const getCatalogoPorSlug = cache(
 
     const { data: comercio, error: errorComercio } = await supabase
       .from("comercios")
-      .select("id, nombre, whatsapp, logo_url, plan, direccion")
+      .select("id, nombre, whatsapp, logo_url, direccion")
       .eq("slug", slug)
       .eq("activo", true)
       .single();

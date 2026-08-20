@@ -1,7 +1,11 @@
 import type { Catalogo, Categoria, Producto, Comercio } from "./database";
 
 export interface CatalogoConRelaciones extends Catalogo {
-  comercios: Pick<Comercio, "id" | "nombre" | "whatsapp" | "logo_url" | "plan" | "direccion">;
+  /**
+   * Sólo las columnas que el visitante anónimo tiene concedidas. `plan` y
+   * `user_id` quedan fuera a propósito: no se le conceden a `anon`.
+   */
+  comercios: Pick<Comercio, "id" | "nombre" | "whatsapp" | "logo_url" | "direccion">;
   categorias: Categoria[];
   productos: Producto[];
 }
