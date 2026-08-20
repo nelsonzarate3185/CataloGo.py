@@ -134,8 +134,18 @@ export default function RegistroPage() {
           </h1>
           <p className="text-[14px] text-muted-foreground mb-6">
             ¿Ya tenés cuenta?{" "}
-            <Link href="/login" className="font-semibold text-brand-blue hover:underline">
+            {/* `?cambiar=1` evita que el middleware rebote a /dashboard cuando
+                hay una sesión abierta. Sin eso, quien llega acá con sesión no
+                puede volver al formulario de login. */}
+            <Link href="/login?cambiar=1" className="font-semibold text-link hover:underline">
               Iniciá sesión
+            </Link>
+          </p>
+
+          <p className="mb-6 text-[13px] text-muted-foreground">
+            ¿Llegaste acá con la sesión de otra cuenta?{" "}
+            <Link href="/logout" className="font-semibold text-link hover:underline">
+              Cerrá sesión
             </Link>
           </p>
 

@@ -39,7 +39,14 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (isAuth && user) {
+  // Con `?cambiar=1` el formulario se muestra aunque haya sesión abierta. Sin
+  // esta salida, quien ya está autenticado no puede entrar con otra cuenta:
+  // /login rebota a /dashboard, y si ese usuario no tiene comercio el panel lo
+  // manda a /registro, que sólo enlaza de vuelta a /login. El bucle se cierra y
+  // el formulario de credenciales queda inalcanzable.
+  const quiereCambiarCuenta = request.nextUrl.searchParams.has("cambiar");
+
+  if (isAuth && user && !quiereCambiarCuenta) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

@@ -154,6 +154,13 @@ export default function LoginPage() {
               {loading ? "Iniciando..." : "Iniciar sesión"}
             </button>
           </form>
+
+          <p className="mt-5 text-center text-[13px] text-muted-foreground">
+            ¿Tenés otra sesión abierta?{" "}
+            <Link href="/logout" className="font-semibold text-link hover:underline">
+              Cerrá sesión
+            </Link>
+          </p>
         </div>
       </div>
     </div>
