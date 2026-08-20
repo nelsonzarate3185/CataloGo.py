@@ -24,7 +24,7 @@ export default async function DashboardLayout({
   const isSuperAdmin = userRecord?.role === "super_admin";
 
   return (
-    <div className="min-h-screen bg-sage-100 flex">
+    <div className="flex min-h-screen bg-background">
       <DashboardNav
         comercioNombre={comercio.nombre}
         comercioSlug={comercio.slug}

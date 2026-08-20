@@ -27,8 +27,8 @@ export default async function QRPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Mi código QR</h1>
-      <p className="text-sm text-gray-500 mb-8">
+      <h1 className="text-2xl font-bold text-foreground mb-2">Mi código QR</h1>
+      <p className="text-sm text-muted-foreground mb-8">
         Imprimilo, pegalo en tu local y tus clientes verán tu catálogo al escanearlo.
       </p>
       <QRClient url={catalogoUrl} comercioNombre={comercio.nombre} />

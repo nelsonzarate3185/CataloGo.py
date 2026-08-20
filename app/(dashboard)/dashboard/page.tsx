@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, Package, ShoppingBag, Star, TrendingUp, ExternalLink } from "lucide-react";
 import CopyLinkButton from "@/components/dashboard/CopyLinkButton";
 import { PLAN_LIMITES } from "@/types/database";
-import { formatGS } from "@/lib/utils";
+import { cn, formatGS } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
       value: comercio.plan.charAt(0).toUpperCase() + comercio.plan.slice(1),
       delta: "Ver mis planes",
       icon: Star,
-      color: "text-[#c4314b]",
+      color: "text-destructive",
       href: "/dashboard/configuracion#plan",
     },
   ];
@@ -161,19 +161,19 @@ export default async function DashboardPage() {
 
       {/* Banner upgrade */}
       {comercio.plan === "basico" && porcentajeUso >= 80 && (
-        <div className="mb-5 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div className="mb-5 flex items-start gap-3 bg-cat-ambar-fondo border border-cat-ambar/30 rounded-xl p-4">
+          <AlertTriangle className="w-5 h-5 text-cat-ambar shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-bold text-amber-800">
+            <p className="text-sm font-bold text-cat-ambar">
               Usás {totalProductos} de {limiteProductos} productos del plan gratuito
             </p>
-            <p className="text-xs text-amber-700 mt-0.5">
+            <p className="text-xs text-cat-ambar mt-0.5">
               Pasate al Plan Pro para productos ilimitados.
             </p>
           </div>
           <Link
             href="/dashboard/configuracion#plan"
-            className="shrink-0 text-xs font-bold text-amber-700 underline"
+            className="shrink-0 text-xs font-bold text-cat-ambar underline"
           >
             Ver planes
           </Link>
@@ -227,12 +227,14 @@ export default async function DashboardPage() {
                     className="w-full rounded-t-[6px] transition-all"
                     style={{
                       height: `${heightPx}px`,
-                      background: isToday ? "#f6a623" : "#cdd9e6",
+                      background: isToday ? "hsl(var(--primary))" : "hsl(var(--muted))",
                     }}
                   />
                   <span
-                    className="text-[11.5px] font-semibold"
-                    style={{ color: isToday ? "#f6a623" : "#8b95a1" }}
+                    className={cn(
+                      "text-2xs font-semibold",
+                      isToday ? "text-primary" : "text-muted-foreground"
+                    )}
                   >
                     {label}
                   </span>
@@ -279,7 +281,7 @@ export default async function DashboardPage() {
               Aún no recibiste pedidos.
             </p>
           ) : (
-            <div className="divide-y" style={{ borderColor: "#f0f1ec" }}>
+            <div className="divide-y divide-border">
               {(pedidosRecientesRes.data ?? []).map((pedido) => (
                 <div
                   key={pedido.id}
@@ -289,7 +291,7 @@ export default async function DashboardPage() {
                     <p className="text-[14px] font-bold text-foreground">
                       {pedido.nombre_cliente ?? "Cliente"}
                     </p>
-                    <p className="text-[12px]" style={{ color: "#8b95a1" }}>
+                    <p className="text-xs text-muted-foreground">
                       #{pedido.id.slice(0, 8)} ·{" "}
                       {new Date(pedido.created_at).toLocaleDateString("es-PY")}
                     </p>
@@ -299,8 +301,7 @@ export default async function DashboardPage() {
                       {pedido.total ? formatGS(pedido.total) : "—"}
                     </p>
                     <span
-                      className="text-[11.5px] font-bold"
-                      style={{ color: "#1f8a52" }}
+                      className="text-[11.5px] font-bold text-success"
                     >
                       Recibido
                     </span>
@@ -311,8 +312,7 @@ export default async function DashboardPage() {
           )}
           <Link
             href="/dashboard/pedidos"
-            className="block mt-3 text-center text-[13px] font-semibold hover:underline"
-            style={{ color: "#1a73c7" }}
+            className="block mt-3 text-center text-[13px] font-semibold hover:underline text-link"
           >
             Ver todos los pedidos ›
           </Link>

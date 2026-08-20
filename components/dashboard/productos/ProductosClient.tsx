@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -21,7 +21,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { Plus, GripVertical, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { formatGS } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Price } from "@/components/ui/price";
+import { marcasDisponibles, porcentajeDescuento } from "@/lib/productos";
 import type { Producto, Catalogo, Categoria, PlanTipo } from "@/types/database";
 import { ILIMITADO } from "@/types/database";
 import ProductoModal from "./ProductoModal";
@@ -53,9 +56,10 @@ export default function ProductosClient({
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  const puedeAgregar =
-    limiteProductos >= ILIMITADO ||
-    productos.filter((p) => p.disponible).length < limiteProductos;
+  const marcasExistentes = useMemo(() => marcasDisponibles(productos), [productos]);
+
+  const activos = productos.filter((p) => p.disponible).length;
+  const puedeAgregar = limiteProductos >= ILIMITADO || activos < limiteProductos;
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -79,10 +83,14 @@ export default function ProductosClient({
   async function toggleDisponible(producto: Producto) {
     const nuevoEstado = !producto.disponible;
 
-    if (!nuevoEstado === false && plan === "basico") {
-      const activos = productos.filter((p) => p.disponible && p.id !== producto.id).length;
-      if (activos >= limiteProductos) {
-        toast.error(`Límite del plan básico: ${limiteProductos} productos`);
+    // Sólo activar puede chocar contra el límite del plan; desactivar siempre
+    // está permitido.
+    if (nuevoEstado && limiteProductos < ILIMITADO) {
+      const otrosActivos = productos.filter(
+        (p) => p.disponible && p.id !== producto.id
+      ).length;
+      if (otrosActivos >= limiteProductos) {
+        toast.error(`Límite del plan ${plan}: ${limiteProductos} productos activos`);
         return;
       }
     }
@@ -108,6 +116,15 @@ export default function ProductosClient({
     toast.success("Producto eliminado");
   }
 
+  function abrirNuevo() {
+    if (!puedeAgregar) {
+      toast.error(`Límite del plan ${plan}: ${limiteProductos} productos activos`);
+      return;
+    }
+    setEditando(null);
+    setModalOpen(true);
+  }
+
   function handleSaved(producto: Producto, isNew: boolean) {
     if (isNew) {
       setProductos((prev) => [...prev, producto]);
@@ -121,34 +138,23 @@ export default function ProductosClient({
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => {
-            if (!puedeAgregar) {
-              toast.error(`Límite del plan básico: ${limiteProductos} productos activos`);
-              return;
-            }
-            setEditando(null);
-            setModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
-        >
-          <Plus className="w-4 h-4" />
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {activos} {activos === 1 ? "activo" : "activos"}
+          {limiteProductos < ILIMITADO && ` de ${limiteProductos}`}
+        </p>
+        <Button onClick={abrirNuevo}>
+          <Plus className="size-4" aria-hidden="true" />
           Agregar producto
-        </button>
+        </Button>
       </div>
 
       {productos.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border">
-          <p className="text-gray-400 text-sm">
-            No tenés productos aún.{" "}
-            <button
-              onClick={() => setModalOpen(true)}
-              className="text-primary font-medium"
-            >
-              Agregar el primero
-            </button>
-          </p>
+        <div className="rounded-lg border border-border bg-card py-16 text-center">
+          <p className="text-sm text-muted-foreground">No tenés productos aún.</p>
+          <Button variant="link" onClick={abrirNuevo} className="mt-1">
+            Agregar el primero
+          </Button>
         </div>
       ) : (
         <DndContext
@@ -160,7 +166,7 @@ export default function ProductosClient({
             items={productos.map((p) => p.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-2">
+            <ul className="space-y-2">
               {productos.map((producto) => (
                 <SortableProductoRow
                   key={producto.id}
@@ -170,7 +176,7 @@ export default function ProductosClient({
                   onDelete={() => eliminar(producto.id)}
                 />
               ))}
-            </div>
+            </ul>
           </SortableContext>
         </DndContext>
       )}
@@ -182,6 +188,7 @@ export default function ProductosClient({
           categorias={categorias}
           comercioId={comercioId}
           limiteImagenes={limiteImagenes}
+          marcasExistentes={marcasExistentes}
           onClose={() => { setModalOpen(false); setEditando(null); }}
           onSaved={handleSaved}
         />
@@ -210,85 +217,112 @@ function SortableProductoRow({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const estadoBg = producto.disponible ? "#e7f4ec" : "#fbe9ec";
-  const estadoColor = producto.disponible ? "#1f8a52" : "#c4314b";
-  const estadoLabel = producto.disponible ? "Activo" : "Sin stock";
+  const descuento = porcentajeDescuento(producto);
+  const sinStock = typeof producto.stock === "number" && producto.stock <= 0;
+  const stockBajo =
+    typeof producto.stock === "number" && producto.stock > 0 && producto.stock <= 5;
 
   return (
-    <div
+    <li
       ref={setNodeRef}
-      style={{ boxShadow: "0 1px 3px rgba(20,30,45,.06)", border: "1px solid #f0f1ec", ...style }}
-      className="flex items-center gap-3 bg-white rounded-[12px] px-4 py-3"
+      style={style}
+      className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-card"
     >
       <button
         {...attributes}
         {...listeners}
-        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing shrink-0"
+        className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
       >
-        <GripVertical className="w-4 h-4" />
+        <GripVertical className="size-4" aria-hidden="true" />
+        <span className="sr-only">Reordenar {producto.nombre}</span>
       </button>
 
-      {producto.imagen_url ? (
-        <div className="w-11 h-11 rounded-[8px] overflow-hidden shrink-0 relative">
+      <div className="relative size-11 shrink-0 overflow-hidden rounded-md bg-muted">
+        {producto.imagen_url ? (
           <Image
             src={producto.imagen_url}
-            alt={producto.nombre}
+            alt=""
             fill
+            sizes="44px"
             className="object-cover"
           />
-        </div>
-      ) : (
-        <div
-          className="w-11 h-11 rounded-[8px] shrink-0 flex items-center justify-center text-[11px] font-mono"
-          style={{ background: "#f3f5f1", color: "#9aa6a0" }}
-        >
-          Sin foto
-        </div>
-      )}
-
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-[14px] text-foreground leading-tight truncate">
-          {producto.nombre}
-        </p>
-        <p className="text-[13px] font-bold mt-0.5" style={{ color: "#f6a623" }}>
-          {formatGS(producto.precio)}
-        </p>
+        ) : (
+          <span className="flex size-full items-center justify-center text-2xs text-muted-foreground">
+            Sin foto
+          </span>
+        )}
       </div>
 
-      {/* Badge de estado */}
-      <span
-        className="shrink-0 px-[10px] py-[3px] rounded-[20px] text-[12px] font-bold hidden sm:inline-flex"
-        style={{ background: estadoBg, color: estadoColor }}
-      >
-        {estadoLabel}
-      </span>
+      <div className="min-w-0 flex-1">
+        {producto.marca && (
+          <p className="text-2xs uppercase tracking-wide text-muted-foreground">
+            {producto.marca}
+          </p>
+        )}
+        <p className="truncate text-base font-medium leading-tight">{producto.nombre}</p>
+        <Price
+          precio={producto.precio}
+          precioAnterior={producto.precio_anterior}
+          size="sm"
+          className="mt-0.5"
+        />
+      </div>
 
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          onClick={onToggle}
-          title={producto.disponible ? "Desactivar" : "Activar"}
-          className="p-1.5 rounded-lg hover:bg-gray-100"
-          style={{ color: producto.disponible ? "#1f8a52" : "#9aa6a0" }}
+      <div className="hidden shrink-0 flex-wrap justify-end gap-1.5 sm:flex">
+        {descuento > 0 && (
+          <Badge className="rounded-sm bg-deal text-white hover:bg-deal">
+            -{descuento}%
+          </Badge>
+        )}
+        {producto.destacado && (
+          <Badge className="rounded-sm bg-primary text-primary-foreground hover:bg-primary">
+            Destacado
+          </Badge>
+        )}
+        {sinStock ? (
+          <Badge variant="destructive" className="rounded-sm">Agotado</Badge>
+        ) : stockBajo ? (
+          <Badge variant="outline" className="rounded-sm text-deal">
+            Quedan {producto.stock}
+          </Badge>
+        ) : null}
+        <Badge
+          variant="outline"
+          className={
+            producto.disponible ? "rounded-sm text-success" : "rounded-sm text-muted-foreground"
+          }
         >
+          {producto.disponible ? "Activo" : "Oculto"}
+        </Badge>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1">
+        <Button variant="ghost" size="icon" onClick={onToggle}>
           {producto.disponible ? (
-            <Eye className="w-4 h-4" />
+            <Eye className="size-4 text-success" aria-hidden="true" />
           ) : (
-            <EyeOff className="w-4 h-4" />
+            <EyeOff className="size-4 text-muted-foreground" aria-hidden="true" />
           )}
-        </button>
-        <button
-          onClick={onEdit}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-        <button
+          <span className="sr-only">
+            {producto.disponible ? "Ocultar" : "Mostrar"} {producto.nombre}
+          </span>
+        </Button>
+
+        <Button variant="ghost" size="icon" onClick={onEdit}>
+          <Pencil className="size-4" aria-hidden="true" />
+          <span className="sr-only">Editar {producto.nombre}</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onDelete}
-          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"
+          className="text-muted-foreground hover:text-destructive"
         >
-          <Trash2 className="w-4 h-4" />
-        </button>
+          <Trash2 className="size-4" aria-hidden="true" />
+          <span className="sr-only">Eliminar {producto.nombre}</span>
+        </Button>
       </div>
-    </div>
+    </li>
   );
 }

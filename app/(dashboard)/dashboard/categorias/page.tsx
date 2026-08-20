@@ -30,7 +30,7 @@ export default async function CategoriasPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Categorías</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Categorías</h1>
       <CategoriasClient
         catalogos={catalogosRes.data ?? []}
         categorias={categoriasRes.data ?? []}

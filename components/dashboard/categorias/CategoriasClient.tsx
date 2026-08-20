@@ -67,7 +67,7 @@ export default function CategoriasClient({ catalogos, categorias: init }: Props)
 
   if (catalogos.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-xl border text-sm text-gray-400">
+      <div className="text-center py-12 bg-card rounded-xl border text-sm text-muted-foreground">
         Primero creá un catálogo desde el panel de configuración.
       </div>
     );
@@ -84,7 +84,7 @@ export default function CategoriasClient({ catalogos, categorias: init }: Props)
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               catalogoActivo === cat.id
                 ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-muted text-muted-foreground hover:bg-muted"
             }`}
           >
             {cat.nombre}
@@ -93,9 +93,9 @@ export default function CategoriasClient({ catalogos, categorias: init }: Props)
       </div>
 
       {/* Lista de categorías */}
-      <div className="bg-white rounded-xl border divide-y">
+      <div className="bg-card rounded-xl border divide-y">
         {filtradas.length === 0 && (
-          <p className="text-center text-sm text-gray-400 py-8">
+          <p className="text-center text-sm text-muted-foreground py-8">
             No hay categorías en este catálogo.
           </p>
         )}
@@ -112,32 +112,32 @@ export default function CategoriasClient({ catalogos, categorias: init }: Props)
                 />
                 <button
                   onClick={() => guardarEdicion(cat.id)}
-                  className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg"
+                  className="p-1.5 text-success hover:bg-success/10 rounded-lg"
                 >
                   <Check className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setEditandoId(null)}
-                  className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg"
+                  className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </>
             ) : (
               <>
-                <span className="flex-1 text-sm text-gray-800">{cat.nombre}</span>
+                <span className="flex-1 text-sm text-foreground">{cat.nombre}</span>
                 <button
                   onClick={() => {
                     setEditandoId(cat.id);
                     setEditandoNombre(cat.nombre);
                   }}
-                  className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg"
+                  className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => eliminar(cat.id)}
-                  className="p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-lg"
+                  className="p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

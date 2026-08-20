@@ -5,16 +5,49 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { X, Upload, Trash2 } from "lucide-react";
+import { Upload, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { formatGS } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Producto, Catalogo, Categoria } from "@/types/database";
+
+/**
+ * Campo numérico opcional.
+ *
+ * Una cadena vacía tiene que llegar a la base como NULL, no como 0: en `stock`,
+ * 0 significa "agotado" y NULL significa "no llevo control". `z.coerce.number()`
+ * convierte "" en 0 y borraría esa distinción.
+ */
+const numeroOpcional = z.preprocess(
+  (valor) =>
+    valor === "" || valor === null || valor === undefined ? null : Number(valor),
+  z
+    .number({ invalid_type_error: "Ingresá un número" })
+    .int("Sin decimales")
+    .min(0, "No puede ser negativo")
+    .nullable()
+);
 
 const schema = z.object({
   nombre: z.string().min(1, "Requerido"),
   descripcion: z.string().optional(),
+  marca: z.string().optional(),
   precio: z.coerce.number().min(0, "Debe ser mayor o igual a 0"),
+  precio_anterior: numeroOpcional,
+  stock: numeroOpcional,
   catalogo_id: z.string().min(1, "Seleccioná un catálogo"),
   categoria_id: z.string().optional(),
   disponible: z.boolean(),
@@ -29,6 +62,8 @@ interface Props {
   categorias: Categoria[];
   comercioId: string;
   limiteImagenes: number;
+  /** Marcas ya cargadas por el comercio, para autocompletar. */
+  marcasExistentes: string[];
   onClose: () => void;
   onSaved: (producto: Producto, isNew: boolean) => void;
 }
@@ -47,6 +82,7 @@ export default function ProductoModal({
   categorias,
   comercioId,
   limiteImagenes,
+  marcasExistentes,
   onClose,
   onSaved,
 }: Props) {
@@ -74,13 +110,17 @@ export default function ProductoModal({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: {
       nombre: producto?.nombre ?? "",
       descripcion: producto?.descripcion ?? "",
+      marca: producto?.marca ?? "",
       precio: producto?.precio ?? 0,
+      precio_anterior: producto?.precio_anterior ?? null,
+      stock: producto?.stock ?? null,
       catalogo_id: producto?.catalogo_id ?? catalogos[0]?.id ?? "",
       categoria_id: producto?.categoria_id ?? "",
       disponible: producto?.disponible ?? true,
@@ -90,6 +130,11 @@ export default function ProductoModal({
 
   const catalogoSeleccionado = watch("catalogo_id");
   const categoriasFiltradas = categorias.filter((c) => c.catalogo_id === catalogoSeleccionado);
+
+  const precio = Number(watch("precio")) || 0;
+  const precioAnterior = Number(watch("precio_anterior")) || 0;
+  const descuento =
+    precioAnterior > precio ? Math.round(((precioAnterior - precio) / precioAnterior) * 100) : 0;
 
   function handlePrincipalChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -152,19 +197,23 @@ export default function ProductoModal({
     try {
       const isNew = !producto;
 
+      const campos = {
+        catalogo_id: data.catalogo_id,
+        categoria_id: data.categoria_id || null,
+        nombre: data.nombre,
+        descripcion: data.descripcion || null,
+        marca: data.marca?.trim() || null,
+        precio: data.precio,
+        precio_anterior: data.precio_anterior,
+        stock: data.stock,
+        disponible: data.disponible,
+        destacado: data.destacado,
+      };
+
       if (isNew) {
         const { data: created, error } = await supabase
           .from("productos")
-          .insert({
-            comercio_id: comercioId,
-            catalogo_id: data.catalogo_id,
-            categoria_id: data.categoria_id || null,
-            nombre: data.nombre,
-            descripcion: data.descripcion || null,
-            precio: data.precio,
-            disponible: data.disponible,
-            destacado: data.destacado,
-          })
+          .insert({ comercio_id: comercioId, ...campos })
           .select()
           .single();
 
@@ -193,13 +242,7 @@ export default function ProductoModal({
         const { data: updated, error } = await supabase
           .from("productos")
           .update({
-            catalogo_id: data.catalogo_id,
-            categoria_id: data.categoria_id || null,
-            nombre: data.nombre,
-            descripcion: data.descripcion || null,
-            precio: data.precio,
-            disponible: data.disponible,
-            destacado: data.destacado,
+            ...campos,
             imagen_url: imagen_url ?? producto.imagen_url,
             imagenes_adicionales: adicionales,
           })
@@ -217,41 +260,35 @@ export default function ProductoModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="font-semibold text-gray-900">
-            {producto ? "Editar producto" : "Nuevo producto"}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(abierto) => !abierto && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{producto ? "Editar producto" : "Nuevo producto"}</DialogTitle>
+          <DialogDescription>
+            Los campos marcados con * son obligatorios.
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Imagen principal */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Imagen principal
-            </label>
-            <div
+            <Label className="mb-2 block">Imagen principal</Label>
+            <button
+              type="button"
               onClick={() => fileRefPrincipal.current?.click()}
-              className="border-2 border-dashed rounded-xl cursor-pointer hover:border-primary transition-colors overflow-hidden"
+              className="w-full overflow-hidden rounded-lg border-2 border-dashed border-border transition-colors hover:border-primary"
             >
               {imagenPrincipalPreview ? (
-                <div className="relative h-40">
-                  <Image src={imagenPrincipalPreview} alt="Preview" fill className="object-cover" />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    <Upload className="w-6 h-6 text-white" />
-                  </div>
-                </div>
+                <span className="relative block h-40">
+                  <Image src={imagenPrincipalPreview} alt="Vista previa" fill className="object-cover" />
+                </span>
               ) : (
-                <div className="h-32 flex flex-col items-center justify-center text-gray-400 gap-2">
-                  <Upload className="w-6 h-6" />
-                  <p className="text-xs">JPG, PNG o WEBP · máx 10MB</p>
-                </div>
+                <span className="flex h-32 flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <Upload className="size-6" aria-hidden="true" />
+                  <span className="text-xs">JPG, PNG o WEBP · máx 10MB</span>
+                </span>
               )}
-            </div>
+            </button>
             <input
               ref={fileRefPrincipal}
               type="file"
@@ -264,37 +301,41 @@ export default function ProductoModal({
           {/* Imágenes adicionales */}
           {slotsAdicionales > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Imágenes adicionales
-                <span className="ml-1 text-xs text-gray-400 font-normal">
+              <Label className="mb-2 block">
+                Imágenes adicionales{" "}
+                <span className="font-normal text-muted-foreground">
                   (hasta {slotsAdicionales} según tu plan)
                 </span>
-              </label>
-              <div className="flex gap-2 flex-wrap">
+              </Label>
+              <div className="flex flex-wrap gap-2">
                 {Array.from({ length: slotsAdicionales }).map((_, i) => {
                   const preview = imagenesAdicionales[i];
                   return (
                     <div key={i} className="relative">
-                      <div
+                      <button
+                        type="button"
                         onClick={() => !preview && fileRefsAdicionales.current[i]?.click()}
-                        className={`w-20 h-20 rounded-lg border-2 border-dashed overflow-hidden flex items-center justify-center ${
-                          preview ? "border-sage-300" : "border-gray-200 cursor-pointer hover:border-primary"
+                        className={`relative flex size-20 items-center justify-center overflow-hidden rounded-md border-2 border-dashed bg-muted ${
+                          preview ? "border-border" : "border-border hover:border-primary"
                         }`}
-                        style={{ background: "#f3f5f1" }}
                       >
                         {preview ? (
                           <Image src={preview} alt={`Adicional ${i + 1}`} fill className="object-cover" />
                         ) : (
-                          <Upload className="w-5 h-5 text-gray-300" />
+                          <Upload className="size-5 text-muted-foreground" aria-hidden="true" />
                         )}
-                      </div>
+                        <span className="sr-only">
+                          {preview ? `Imagen adicional ${i + 1}` : `Agregar imagen ${i + 1}`}
+                        </span>
+                      </button>
                       {preview && (
                         <button
                           type="button"
                           onClick={() => removeAdicional(i)}
-                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                          className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="size-3" aria-hidden="true" />
+                          <span className="sr-only">Quitar imagen {i + 1}</span>
                         </button>
                       )}
                       <input
@@ -311,29 +352,33 @@ export default function ProductoModal({
             </div>
           )}
 
+          <Separator />
+
           {/* Catálogo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Catálogo *</label>
+            <Label htmlFor="catalogo_id">Catálogo *</Label>
             <select
+              id="catalogo_id"
               {...register("catalogo_id")}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="mt-1 h-9 w-full rounded-md border border-input bg-transparent px-3 text-base shadow-sm"
             >
               {catalogos.map((c) => (
                 <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
             {errors.catalogo_id && (
-              <p className="text-xs text-red-500 mt-1">{errors.catalogo_id.message}</p>
+              <p className="mt-1 text-xs text-destructive">{errors.catalogo_id.message}</p>
             )}
           </div>
 
           {/* Categoría */}
           {categoriasFiltradas.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Categoría (opcional)</label>
+              <Label htmlFor="categoria_id">Categoría (opcional)</Label>
               <select
+                id="categoria_id"
                 {...register("categoria_id")}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="mt-1 h-9 w-full rounded-md border border-input bg-transparent px-3 text-base shadow-sm"
               >
                 <option value="">Sin categoría</option>
                 {categoriasFiltradas.map((c) => (
@@ -345,74 +390,145 @@ export default function ProductoModal({
 
           {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-            <input
-              {...register("nombre")}
-              type="text"
-              placeholder="Ej: Coca-Cola 2L"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            <Label htmlFor="nombre">Nombre *</Label>
+            <Input id="nombre" {...register("nombre")} placeholder="Ej: Coca-Cola 2L" className="mt-1" />
+            {errors.nombre && <p className="mt-1 text-xs text-destructive">{errors.nombre.message}</p>}
+          </div>
+
+          {/* Marca */}
+          <div>
+            <Label htmlFor="marca">Marca (opcional)</Label>
+            <Input
+              id="marca"
+              {...register("marca")}
+              list="marcas-cargadas"
+              placeholder="Ej: Coca-Cola"
+              className="mt-1"
             />
-            {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre.message}</p>}
+            <datalist id="marcas-cargadas">
+              {marcasExistentes.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Aparece como filtro en tu catálogo público.
+            </p>
           </div>
 
           {/* Descripción */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (opcional)</label>
+            <Label htmlFor="descripcion">Descripción (opcional)</Label>
             <textarea
+              id="descripcion"
               {...register("descripcion")}
               rows={2}
-              placeholder="Descripción corta del producto..."
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              placeholder="Descripción corta del producto…"
+              className="mt-1 w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm"
             />
           </div>
 
-          {/* Precio */}
+          <Separator />
+
+          {/* Precios */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="precio">Precio (Gs.) *</Label>
+              <Input
+                id="precio"
+                {...register("precio")}
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                className="mt-1"
+              />
+              {errors.precio && <p className="mt-1 text-xs text-destructive">{errors.precio.message}</p>}
+              {precio > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">{formatGS(precio)}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="precio_anterior">Precio anterior</Label>
+              <Input
+                id="precio_anterior"
+                {...register("precio_anterior")}
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Sin oferta"
+                className="mt-1"
+              />
+              {errors.precio_anterior && (
+                <p className="mt-1 text-xs text-destructive">{errors.precio_anterior.message}</p>
+              )}
+              {descuento > 0 ? (
+                <p className="mt-1 text-xs font-bold text-deal">
+                  Se muestra -{descuento}% de descuento
+                </p>
+              ) : precioAnterior > 0 ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Tiene que ser mayor al precio para mostrar oferta.
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Stock */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Precio (Gs.) *</label>
-            <input
-              {...register("precio")}
+            <Label htmlFor="stock">Stock (opcional)</Label>
+            <Input
+              id="stock"
+              {...register("stock")}
               type="number"
               min="0"
               step="1"
-              placeholder="0"
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Sin control de stock"
+              className="mt-1"
             />
-            {errors.precio && <p className="text-xs text-red-500 mt-1">{errors.precio.message}</p>}
-            {watch("precio") > 0 && (
-              <p className="text-xs text-gray-400 mt-1">{formatGS(watch("precio"))}</p>
-            )}
+            {errors.stock && <p className="mt-1 text-xs text-destructive">{errors.stock.message}</p>}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Dejalo vacío si no llevás control. Con 5 o menos, el catálogo avisa
+              &quot;quedan pocos&quot;; en 0 el producto no se puede pedir.
+            </p>
           </div>
 
-          {/* Switches */}
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input {...register("disponible")} type="checkbox" className="w-4 h-4 accent-primary" />
-              <span className="text-sm text-gray-700">Disponible</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input {...register("destacado")} type="checkbox" className="w-4 h-4 accent-primary" />
-              <span className="text-sm text-gray-700">Destacado</span>
-            </label>
+          <Separator />
+
+          {/* Interruptores */}
+          <div className="flex gap-6">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="disponible"
+                defaultChecked={producto?.disponible ?? true}
+                onCheckedChange={(v) => setValue("disponible", v === true)}
+              />
+              <Label htmlFor="disponible" className="cursor-pointer font-normal">
+                Disponible
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="destacado"
+                defaultChecked={producto?.destacado ?? false}
+                onCheckedChange={(v) => setValue("destacado", v === true)}
+              />
+              <Label htmlFor="destacado" className="cursor-pointer font-normal">
+                Destacado
+              </Label>
+            </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
-            >
-              {loading ? "Guardando..." : "Guardar"}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={loading} className="flex-1">
+              {loading ? "Guardando…" : "Guardar"}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

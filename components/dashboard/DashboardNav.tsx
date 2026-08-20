@@ -35,7 +35,15 @@ interface Props {
   isSuperAdmin?: boolean;
 }
 
-export default function DashboardNav({ comercioNombre, comercioSlug, comercioPlan, isSuperAdmin }: Props) {
+const claseItem =
+  "flex items-center gap-3 rounded-md px-3 py-2.5 text-base font-semibold transition-colors";
+
+export default function DashboardNav({
+  comercioNombre,
+  comercioSlug,
+  comercioPlan,
+  isSuperAdmin,
+}: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -50,33 +58,32 @@ export default function DashboardNav({ comercioNombre, comercioSlug, comercioPla
   }
 
   return (
-    <aside className="w-[230px] bg-navy-950 text-[#c5d0db] flex flex-col min-h-screen shrink-0">
-      {/* Logo */}
-      <div className="px-5 pt-6 pb-5">
-        <div className="flex items-baseline gap-[2px]">
-          <span className="font-heading text-[19px] text-white">Catalo</span>
-          <span className="font-heading text-[19px] text-primary">Go</span>
-          <span className="text-[11px] text-[#8aa0b6] font-bold ml-1">Vendedores</span>
-        </div>
-        <p className="text-[12px] text-[#7a8694] mt-1 truncate">{comercioNombre}</p>
+    <aside className="flex min-h-screen w-[230px] shrink-0 flex-col bg-nav text-nav-foreground/80">
+      <div className="px-5 pb-5 pt-6">
+        <p className="flex items-baseline gap-px">
+          <span className="font-heading text-lg font-bold text-white">Catalo</span>
+          <span className="font-heading text-lg font-bold text-primary">Go</span>
+          <span className="ml-1 text-2xs font-bold text-white/50">Vendedores</span>
+        </p>
+        <p className="mt-1 truncate text-xs text-white/60">{comercioNombre}</p>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 space-y-0.5">
+      <nav aria-label="Panel del comercio" className="flex-1 space-y-0.5 px-3">
         {navItems.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact);
           return (
             <Link
               key={href}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-[11px] px-3 py-[10px] rounded-[9px] text-[14px] font-semibold transition-colors",
+                claseItem,
                 active
-                  ? "bg-primary text-navy-950"
-                  : "text-[#c5d0db] hover:bg-navy-800"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-nav-sub hover:text-white"
               )}
             >
-              <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+              <Icon className="size-[18px] shrink-0" aria-hidden="true" />
               {label}
             </Link>
           );
@@ -85,14 +92,15 @@ export default function DashboardNav({ comercioNombre, comercioSlug, comercioPla
         {comercioPlan === "business" && (
           <Link
             href="/dashboard/sucursales"
+            aria-current={isActive("/dashboard/sucursales") ? "page" : undefined}
             className={cn(
-              "flex items-center gap-[11px] px-3 py-[10px] rounded-[9px] text-[14px] font-semibold transition-colors",
+              claseItem,
               isActive("/dashboard/sucursales")
-                ? "bg-primary text-navy-950"
-                : "text-[#c5d0db] hover:bg-navy-800"
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-nav-sub hover:text-white"
             )}
           >
-            <MapPin className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+            <MapPin className="size-[18px] shrink-0" aria-hidden="true" />
             Sucursales
           </Link>
         )}
@@ -100,42 +108,47 @@ export default function DashboardNav({ comercioNombre, comercioSlug, comercioPla
         {isSuperAdmin && (
           <Link
             href="/admin"
+            aria-current={isActive("/admin") ? "page" : undefined}
             className={cn(
-              "flex items-center gap-[11px] px-3 py-[10px] rounded-[9px] text-[14px] font-semibold transition-colors mt-2 border border-orange-500/30",
+              claseItem,
+              "mt-2 border border-primary/40",
               isActive("/admin")
-                ? "bg-orange-500 text-white"
-                : "text-orange-400 hover:bg-orange-500/10"
+                ? "bg-primary text-primary-foreground"
+                : "text-primary hover:bg-primary/10"
             )}
           >
-            <Shield className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+            <Shield className="size-[18px] shrink-0" aria-hidden="true" />
             Consola Admin
           </Link>
         )}
       </nav>
 
-      {/* Footer */}
-      <div className="px-3 pb-6 pt-4 space-y-1 border-t border-navy-800 mt-4">
+      <div className="mt-4 space-y-1 border-t border-nav-sub px-3 pb-6 pt-4">
         <Link
           href={`/c/${comercioSlug}`}
           target="_blank"
-          className="flex items-center gap-[11px] px-3 py-[10px] rounded-[9px] text-[14px] font-semibold text-[#c5d0db] hover:bg-navy-800 transition-colors"
+          rel="noopener noreferrer"
+          className={cn(claseItem, "hover:bg-nav-sub hover:text-white")}
         >
-          <ExternalLink className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+          <ExternalLink className="size-[18px] shrink-0" aria-hidden="true" />
           Ver mi tienda pública
         </Link>
+
         <button
           onClick={handleLogout}
-          className="flex items-center gap-[11px] px-3 py-[10px] rounded-[9px] text-[14px] font-semibold text-[#c5d0db] hover:bg-navy-800 transition-colors w-full"
+          className={cn(claseItem, "w-full hover:bg-nav-sub hover:text-white")}
         >
-          <LogOut className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+          <LogOut className="size-[18px] shrink-0" aria-hidden="true" />
           Cerrar sesión
         </button>
 
+        {/* Apunta a la lista, donde vive el botón de alta: no existe una ruta
+            /dashboard/productos/nuevo. */}
         <Link
-          href="/dashboard/productos/nuevo"
-          className="flex items-center justify-center gap-2 mt-3 w-full py-[11px] rounded-[9px] bg-navy-800 text-white text-[13.5px] font-bold hover:bg-navy-700 transition-colors"
+          href="/dashboard/productos"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-nav-sub py-2.5 text-sm font-bold text-white transition-colors hover:bg-nav-sub/80"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="size-4" aria-hidden="true" />
           Publicar producto
         </Link>
       </div>
