@@ -133,6 +133,11 @@ export type Database = {
           nombre: string;
           descripcion: string | null;
           precio: number;
+          /** Precio de lista anterior. Si es mayor que `precio`, la UI muestra el descuento. */
+          precio_anterior: number | null;
+          /** Unidades restantes. NULL = el comercio no lleva control de stock. */
+          stock: number | null;
+          marca: string | null;
           imagen_url: string | null;
           imagenes_adicionales: Json | null;
           disponible: boolean;
@@ -149,6 +154,9 @@ export type Database = {
           nombre: string;
           descripcion?: string | null;
           precio?: number;
+          precio_anterior?: number | null;
+          stock?: number | null;
+          marca?: string | null;
           imagen_url?: string | null;
           imagenes_adicionales?: Json | null;
           disponible?: boolean;
@@ -165,6 +173,9 @@ export type Database = {
           nombre?: string;
           descripcion?: string | null;
           precio?: number;
+          precio_anterior?: number | null;
+          stock?: number | null;
+          marca?: string | null;
           imagen_url?: string | null;
           imagenes_adicionales?: Json | null;
           disponible?: boolean;
