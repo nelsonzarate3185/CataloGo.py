@@ -63,6 +63,44 @@ export async function deletePlan(id: string) {
 
 // ── Solicitudes ─────────────────────────────────────────────
 
+/**
+ * Explica por qué un UPDATE sobre plan_requests no afectó ninguna fila.
+ *
+ * PostgREST no distingue los dos casos: si RLS filtra la fila, el UPDATE no
+ * falla, simplemente no toca nada y RETURNING vuelve vacío — igual que si el
+ * id no existiera. El código anterior asumía lo segundo y reportaba "Solicitud
+ * no encontrada" aunque la fila estuviera ahí, lo que mandó a buscar el
+ * problema al lugar equivocado.
+ *
+ * Se consulta la fila para separar ambos casos y devolver un mensaje accionable.
+ */
+async function explicarUpdateVacio(
+  admin: Awaited<ReturnType<typeof requireAdmin>>,
+  requestId: string
+): Promise<string> {
+  const { data, error } = await admin
+    .from("plan_requests")
+    .select("id, status")
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (error) {
+    return `No se pudo leer la solicitud ${requestId}: ${error.message}`;
+  }
+
+  if (!data) {
+    return `La solicitud ${requestId} ya no existe en la base de datos.`;
+  }
+
+  return (
+    `La solicitud existe (estado actual: ${data.status}) pero la actualización no ` +
+    `modificó ninguna fila. Es un permiso de base de datos: revisá las políticas ` +
+    `RLS de UPDATE sobre plan_requests y que SUPABASE_SERVICE_ROLE_KEY sea la ` +
+    `service role y no la anon key.`
+  );
+}
+
+
 type ActionResult = { ok: true } | { ok: false; error: string };
 
 export async function approveRequest(
@@ -81,7 +119,7 @@ export async function approveRequest(
 
     if (reqError) return { ok: false, error: `Error al aprobar: ${reqError.message}` };
     if (!updated || updated.length === 0) {
-      return { ok: false, error: `Solicitud no encontrada (id: ${requestId})` };
+      return { ok: false, error: await explicarUpdateVacio(admin, requestId) };
     }
 
     if (planId) {
@@ -122,7 +160,7 @@ export async function rejectRequest(requestId: string): Promise<ActionResult> {
       .select();
     if (error) return { ok: false, error: error.message };
     if (!updated || updated.length === 0) {
-      return { ok: false, error: `Solicitud no encontrada (id: ${requestId})` };
+      return { ok: false, error: await explicarUpdateVacio(admin, requestId) };
     }
     revalidatePath("/admin/solicitudes");
     return { ok: true };
