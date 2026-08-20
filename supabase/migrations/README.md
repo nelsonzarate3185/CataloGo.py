@@ -35,6 +35,15 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 
 | Migración | Aplicada en producción |
 |---|---|
-| `20260820000000_productos_precio_anterior_stock_marca.sql` | ⬜ pendiente |
+| `20260820000000_productos_precio_anterior_stock_marca.sql` | ✅ |
+| `20260820120000_resenas.sql` | ✅ |
+| `20260820140000_comercios_lectura_publica.sql` | ⬜ **pendiente — el catálogo público da 404 sin esto** |
+| `20260820150000_comercios_columnas_anon.sql` | ⬜ pendiente — correr sólo con el código nuevo ya desplegado |
 
 Marcar la casilla al aplicarla.
+
+## Dependencias con el deploy
+
+`20260820150000` revoca el acceso de `anon` a columnas que el código anterior
+seleccionaba. Correrla antes de que el código nuevo esté vivo rompe el catálogo.
+Verificar con `GET /api/resenas`: debe responder 405, no 404.
