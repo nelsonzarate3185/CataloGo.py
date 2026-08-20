@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Price } from "@/components/ui/price";
+import { Rating } from "@/components/ui/rating";
 import { Badge } from "@/components/ui/badge";
 import BotonAgregar from "./BotonAgregar";
 import { porcentajeDescuento, sePuedeComprar } from "@/lib/productos";
@@ -82,6 +83,14 @@ export default function ProductoCard({ slug, producto }: Props) {
             {producto.nombre}
           </Link>
         </h3>
+
+        {producto.resenas_count > 0 && (
+          <Rating
+            valor={producto.calificacion_promedio}
+            cantidad={producto.resenas_count}
+            size="sm"
+          />
+        )}
 
         <div className="mt-auto space-y-2 pt-1">
           <Price

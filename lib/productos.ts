@@ -14,6 +14,7 @@ export const ORDENES = {
   "precio-desc": "Precio: mayor a menor",
   nombre: "Nombre A-Z",
   descuento: "Mayor descuento",
+  calificacion: "Mejor calificados",
 } as const;
 
 export type Orden = keyof typeof ORDENES;
@@ -103,6 +104,13 @@ function ordenarProductos(productos: Producto[], orden: Orden): Producto[] {
       return lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     case "descuento":
       return lista.sort((a, b) => porcentajeDescuento(b) - porcentajeDescuento(a));
+    case "calificacion":
+      // Los productos sin reseñas van al final, no al principio con un 0.
+      return lista.sort((a, b) => {
+        const ca = a.resenas_count > 0 ? a.calificacion_promedio ?? 0 : -1;
+        const cb = b.resenas_count > 0 ? b.calificacion_promedio ?? 0 : -1;
+        return cb - ca;
+      });
     case "relevancia":
     default:
       return lista.sort((a, b) => {

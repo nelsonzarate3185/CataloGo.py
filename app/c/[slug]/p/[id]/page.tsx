@@ -3,12 +3,15 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getCatalogoPorSlug } from "@/lib/catalogo";
+import { getCatalogoPorSlug, getResenasProducto } from "@/lib/catalogo";
 import { porcentajeDescuento, sePuedeComprar } from "@/lib/productos";
 import GaleriaProducto from "@/components/catalogo/GaleriaProducto";
 import BotonAgregar from "@/components/catalogo/BotonAgregar";
 import ProductoCard from "@/components/catalogo/ProductoCard";
 import { Price } from "@/components/ui/price";
+import { Rating } from "@/components/ui/rating";
+import ResenaForm from "@/components/catalogo/ResenaForm";
+import ResenasLista from "@/components/catalogo/ResenasLista";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -78,6 +81,8 @@ export default async function ProductoPage({ params }: Props) {
   const descuento = porcentajeDescuento(producto);
   const comprable = sePuedeComprar(producto);
 
+  const resenas = await getResenasProducto(producto.id);
+
   const relacionados = catalogo.productos
     .filter(
       (p) =>
@@ -128,6 +133,15 @@ export default async function ProductoPage({ params }: Props) {
           )}
 
           <h1 className="font-heading text-2xl font-bold">{producto.nombre}</h1>
+
+          {producto.resenas_count > 0 && (
+            <a href="#resenas" className="mt-2 inline-flex hover:underline">
+              <Rating
+                valor={producto.calificacion_promedio}
+                cantidad={producto.resenas_count}
+              />
+            </a>
+          )}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {producto.destacado && (
@@ -204,6 +218,17 @@ export default async function ProductoPage({ params }: Props) {
           )}
         </aside>
       </div>
+
+      <section id="resenas" className="mt-10 max-w-3xl scroll-mt-24">
+        <h2 className="mb-3">Reseñas</h2>
+        <ResenasLista
+          resenas={resenas}
+          promedio={producto.calificacion_promedio}
+          total={producto.resenas_count}
+        />
+        <h3 className="mb-2 mt-6">Dejá tu reseña</h3>
+        <ResenaForm productoId={producto.id} nombreProducto={producto.nombre} />
+      </section>
 
       {relacionados.length > 0 && (
         <section className="mt-10">

@@ -7,6 +7,7 @@ import {
   Package,
   Tag,
   ShoppingBag,
+  Star,
   QrCode,
   Settings,
   LogOut,
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/dashboard/productos", label: "Mis productos", icon: Package },
   { href: "/dashboard/categorias", label: "Categorías", icon: Tag },
   { href: "/dashboard/pedidos", label: "Pedidos", icon: ShoppingBag },
+  { href: "/dashboard/resenas", label: "Reseñas", icon: Star },
   { href: "/dashboard/qr", label: "Mi QR", icon: QrCode },
   { href: "/dashboard/configuracion", label: "Mi tienda", icon: Settings },
 ];

@@ -1,7 +1,7 @@
 # Rediseño Amazon — Diseño general y sub-proyecto #1
 
 Fecha: 2026-08-20
-Estado: #1, #3, #4 y #6 implementados. #2 implementado, migración pendiente de aplicar. #5 sin empezar.
+Estado: los seis sub-proyectos implementados. Migración de reseñas pendiente de aplicar.
 
 ## Objetivo
 
@@ -370,3 +370,70 @@ y el primero se descarta en silencio, lo que habría borrado clases de layout. S
 detectaron por barrido con expresión regular y se fusionaron; los tres casos con
 clase condicional se reescribieron con `cn()`. Un caso más grave: un `style={}`
 quedó recibiendo un string de clases de Tailwind, que no habría aplicado nada.
+
+---
+
+## Sub-proyecto #5 — Reseñas y valoraciones
+
+### Decisión sobre la verificación
+
+El usuario optó por reseñas **anónimas con firma obligatoria**. Se deja
+constancia de lo que eso implica: sin cuentas de comprador no existe
+verificación de identidad. Cualquiera puede firmar con el nombre que quiera, y
+una conexión nueva habilita una reseña nueva. El objetivo del diseño es
+encarecer el abuso, no impedirlo, y comunicarle al comprador que las reseñas no
+están verificadas.
+
+### Alta por API route, no por RLS
+
+La tabla `resenas` **no tiene policy de INSERT**. Las altas pasan por
+`POST /api/resenas`, que usa la service role key. Dos razones: una policy de
+insert pública es una puerta abierta a la inundación, y el rate limit necesita
+la IP, que sólo existe del lado del servidor.
+
+La route deriva `comercio_id` del `producto_id` en vez de aceptarlo del cliente:
+un `comercio_id` recibido podría apuntar a otro tenant.
+
+### Anti-abuso
+
+- Índice único `(producto_id, ip_hash)`: una reseña por conexión y producto.
+  Es el freno principal contra el review bombing de un producto puntual.
+- Máximo de 5 reseñas por conexión y comercio en 24 horas.
+- Campo trampa invisible; si viene relleno se responde 201 sin escribir nada,
+  para no darle al bot la señal de que fue detectado.
+- La IP se guarda como `sha256(ip + sal)`, nunca en crudo. La sal sale de
+  `RESENAS_IP_SALT`, con `SUPABASE_SERVICE_ROLE_KEY` como respaldo para no
+  sumar una variable de entorno obligatoria.
+
+### Moderación configurable
+
+`comercios.resenas_moderadas` decide si las reseñas nuevas se publican al
+instante o esperan aprobación. El default es publicación inmediata, que es la
+menor fricción y lo que se pidió. El dueño lo activa desde
+`/dashboard/resenas` si empieza a recibir reseñas falsas o de la competencia.
+
+Esto evita tener que elegir de antemano entre exposición al spam y fricción:
+cada comercio decide según lo que le pase.
+
+### Agregados desnormalizados
+
+`productos.calificacion_promedio` y `productos.resenas_count` los mantiene un
+trigger sobre `resenas`. Se desnormaliza a propósito: el catálogo público trae
+todos los productos en una sola consulta y la grilla necesita mostrar
+estrellas. Un join agregado obligaría a rehacer esa consulta y a paginar antes
+de tiempo. El trigger también permite el orden "Mejor calificados".
+
+En ese orden, los productos sin reseñas van al final y no al principio con un
+promedio de 0.
+
+### Accesibilidad
+
+`<Rating>` rellena fracciones con un recorte por ancho en lugar de redondear,
+para que 4.4 y 4.6 se distingan del número que los acompaña. El valor va además
+en `title` y en texto para lectores de pantalla, porque la forma y el color no
+se leen solos.
+
+### Advertencia visible al comprador
+
+La lista de reseñas dice explícitamente que son anónimas y que no verifican una
+compra. Ocultarlo sería presentar como verificado algo que no lo es.

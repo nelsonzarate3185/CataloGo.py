@@ -30,6 +30,8 @@ export type Database = {
           plan: PlanTipo;
           plan_expira_at: string | null;
           activo: boolean;
+          /** Si es true, las reseñas nuevas quedan pendientes de aprobación. */
+          resenas_moderadas: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -46,6 +48,7 @@ export type Database = {
           plan?: PlanTipo;
           plan_expira_at?: string | null;
           activo?: boolean;
+          resenas_moderadas?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -62,6 +65,7 @@ export type Database = {
           plan?: PlanTipo;
           plan_expira_at?: string | null;
           activo?: boolean;
+          resenas_moderadas?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -138,6 +142,10 @@ export type Database = {
           /** Unidades restantes. NULL = el comercio no lleva control de stock. */
           stock: number | null;
           marca: string | null;
+          /** Promedio de reseñas aprobadas (1.0–5.0). NULL si no tiene. Lo mantiene un trigger. */
+          calificacion_promedio: number | null;
+          /** Cantidad de reseñas aprobadas. Lo mantiene un trigger. */
+          resenas_count: number;
           imagen_url: string | null;
           imagenes_adicionales: Json | null;
           disponible: boolean;
@@ -157,6 +165,8 @@ export type Database = {
           precio_anterior?: number | null;
           stock?: number | null;
           marca?: string | null;
+          calificacion_promedio?: number | null;
+          resenas_count?: number;
           imagen_url?: string | null;
           imagenes_adicionales?: Json | null;
           disponible?: boolean;
@@ -176,6 +186,8 @@ export type Database = {
           precio_anterior?: number | null;
           stock?: number | null;
           marca?: string | null;
+          calificacion_promedio?: number | null;
+          resenas_count?: number;
           imagen_url?: string | null;
           imagenes_adicionales?: Json | null;
           disponible?: boolean;
@@ -183,6 +195,44 @@ export type Database = {
           orden?: number;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      resenas: {
+        Row: {
+          id: string;
+          comercio_id: string;
+          producto_id: string;
+          /** Firma del comprador. No verifica identidad. */
+          nombre: string;
+          calificacion: number;
+          comentario: string | null;
+          aprobada: boolean;
+          /** sha256(ip + sal). Sólo para limitar frecuencia. */
+          ip_hash: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          comercio_id: string;
+          producto_id: string;
+          nombre: string;
+          calificacion: number;
+          comentario?: string | null;
+          aprobada?: boolean;
+          ip_hash?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          comercio_id?: string;
+          producto_id?: string;
+          nombre?: string;
+          calificacion?: number;
+          comentario?: string | null;
+          aprobada?: boolean;
+          ip_hash?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -381,6 +431,7 @@ export type Comercio = Database["public"]["Tables"]["comercios"]["Row"];
 export type Catalogo = Database["public"]["Tables"]["catalogos"]["Row"];
 export type Categoria = Database["public"]["Tables"]["categorias"]["Row"];
 export type Producto = Database["public"]["Tables"]["productos"]["Row"];
+export type Resena = Database["public"]["Tables"]["resenas"]["Row"];
 export type Pedido = Database["public"]["Tables"]["pedidos"]["Row"];
 export type Suscripcion = Database["public"]["Tables"]["suscripciones"]["Row"];
 export type Sucursal = Database["public"]["Tables"]["sucursales"]["Row"];
