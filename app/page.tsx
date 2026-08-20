@@ -1,29 +1,29 @@
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { ArrowRight, QrCode, ShoppingCart, MessageCircle, Star } from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen" style={{ background: "#e9ebe4" }}>
+    <div className="min-h-screen bg-background">
 
       {/* Navbar */}
-      <nav style={{ background: "#0f1c2e" }}>
+      <nav className="bg-nav">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-baseline gap-[2px]">
             <span className="font-heading text-[22px] text-white">Catalo</span>
             <span className="font-heading text-[22px] text-primary">Go</span>
-            <span className="text-[11px] text-[#8aa0b6] font-bold ml-1">.py</span>
+            <span className="text-[11px] text-white/50 font-bold ml-1">.py</span>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="px-4 py-2 text-[13.5px] font-semibold text-[#c5d0db] hover:text-white transition-colors"
+              className="px-4 py-2 text-[13.5px] font-semibold text-white/75 hover:text-white transition-colors"
             >
               Iniciar sesión
             </Link>
             <Link
               href="/registro"
-              className="px-4 py-2 text-[13.5px] font-extrabold rounded-[8px] transition-colors"
-              style={{ background: "#f6a623", color: "#1b2733" }}
+              className="px-4 py-2 text-[13.5px] font-extrabold rounded-[8px] transition-colors bg-primary text-primary-foreground"
             >
               Empezar gratis
             </Link>
@@ -34,8 +34,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-16 pb-14">
         <div
-          className="relative rounded-[14px] overflow-hidden px-10 py-14"
-          style={{ background: "linear-gradient(120deg, #102b46 0%, #1c4b73 55%, #2d6da0 100%)" }}
+          className="relative rounded-[14px] overflow-hidden px-10 py-14 bg-gradient-to-br from-nav via-nav-sub to-link"
         >
           <div
             className="absolute inset-0"
@@ -46,21 +45,19 @@ export default function LandingPage() {
           />
           <div className="relative max-w-xl">
             <div
-              className="inline-block px-3 py-1.5 rounded-full text-[12px] font-extrabold tracking-widest uppercase mb-5"
-              style={{ background: "#f6a623", color: "#1b2733" }}
+              className="inline-block px-3 py-1.5 rounded-full text-[12px] font-extrabold tracking-widest uppercase mb-5 bg-primary text-primary-foreground"
             >
               Para emprendedores paraguayos
             </div>
             <h1 className="font-heading text-[40px] leading-[1.08] font-extrabold text-white mb-4">
               Tu catálogo digital,<br />listo en minutos
             </h1>
-            <p className="text-[16px] text-[#c5d6e6] mb-7 max-w-md">
+            <p className="text-[16px] text-white/80 mb-7 max-w-md">
               Mostrá tus productos en guaraníes, compartí por link o QR y recibí los pedidos directo en tu WhatsApp — sin comisiones.
             </p>
             <Link
               href="/registro"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[10px] font-extrabold text-[15px] transition-opacity hover:opacity-90"
-              style={{ background: "#f6a623", color: "#1b2733" }}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[10px] font-extrabold text-[15px] transition-opacity hover:opacity-90 bg-primary text-primary-foreground"
             >
               Crear mi catálogo gratis
               <ArrowRight className="w-5 h-5" />
@@ -77,33 +74,32 @@ export default function LandingPage() {
               icon: ShoppingCart,
               title: "Catálogo organizado",
               desc: "Productos con foto, precio en Gs. y categorías. Tus clientes encuentran lo que buscan fácil.",
-              bg: "#e7f4ec",
-              iconColor: "#1f8a52",
+              bg: "bg-cat-verde-fondo",
+              iconColor: "text-cat-verde",
             },
             {
               icon: QrCode,
               title: "Link y QR listos",
               desc: "Compartí tu catálogo por link o imprimí el código QR para tu local o puesto.",
-              bg: "#e8f0fb",
-              iconColor: "#1a73c7",
+              bg: "bg-cat-azul-fondo",
+              iconColor: "text-cat-azul",
             },
             {
               icon: MessageCircle,
               title: "Pedidos por WhatsApp",
               desc: "El cliente elige, presiona \"Pedir\" y te llega el pedido formateado en WhatsApp.",
-              bg: "#fff7e6",
-              iconColor: "#c77d18",
+              bg: "bg-cat-naranja-fondo",
+              iconColor: "text-cat-naranja",
             },
           ].map(({ icon: Icon, title, desc, bg, iconColor }) => (
             <div
               key={title}
-              className="bg-white rounded-[14px] p-6 shadow-card"
+              className="bg-card rounded-[14px] p-6 shadow-card"
             >
               <div
-                className="w-12 h-12 rounded-[12px] flex items-center justify-center mb-4"
-                style={{ background: bg }}
+                className={cn("mb-4 flex size-12 items-center justify-center rounded-lg", bg)}
               >
-                <Icon className="w-6 h-6" style={{ color: iconColor }} />
+                <Icon className={cn("size-6", iconColor)} aria-hidden="true" />
               </div>
               <h3 className="font-heading text-[17px] font-extrabold text-foreground mb-2">{title}</h3>
               <p className="text-[14px] text-muted-foreground leading-relaxed">{desc}</p>
@@ -154,8 +150,10 @@ export default function LandingPage() {
           ].map((plan) => (
             <div
               key={plan.name}
-              className="bg-white rounded-[14px] p-6 shadow-card flex flex-col"
-              style={plan.highlight ? { outline: "2px solid #f6a623" } : {}}
+              className={cn(
+                "flex flex-col rounded-lg bg-card p-6 shadow-card",
+                plan.highlight && "outline outline-2 outline-primary"
+              )}
             >
               {plan.highlight && (
                 <div className="flex items-center gap-1.5 mb-3">
@@ -180,12 +178,12 @@ export default function LandingPage() {
               </ul>
               <Link
                 href="/registro"
-                className="block text-center py-[11px] rounded-[24px] font-extrabold text-[14px] transition-opacity hover:opacity-90"
-                style={
+                className={cn(
+                  "block rounded-pill py-3 text-center text-base font-extrabold transition-opacity hover:opacity-90",
                   plan.highlight
-                    ? { background: "#f6a623", color: "#1b2733" }
-                    : { background: "#16283d", color: "#fff" }
-                }
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-nav-sub text-white"
+                )}
               >
                 {plan.cta}
               </Link>
@@ -195,21 +193,21 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer style={{ background: "#0f1c2e" }}>
+      <footer className="bg-nav">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-baseline gap-[2px]">
             <span className="font-heading text-[18px] text-white">Catalo</span>
             <span className="font-heading text-[18px] text-primary">Go</span>
-            <span className="text-[10px] text-[#8aa0b6] font-bold ml-1">.py</span>
+            <span className="text-[10px] text-white/50 font-bold ml-1">.py</span>
           </div>
-          <p className="text-[13px] text-[#7a8694]">
+          <p className="text-[13px] text-white/60">
             © {new Date().getFullYear()} CataloGo — Para emprendedores del Paraguay
           </p>
           <div className="flex gap-4">
-            <Link href="/login" className="text-[13px] text-[#9fb0c2] hover:text-white transition-colors">
+            <Link href="/login" className="text-[13px] text-white/70 hover:text-white transition-colors">
               Iniciar sesión
             </Link>
-            <Link href="/registro" className="text-[13px] text-[#9fb0c2] hover:text-white transition-colors">
+            <Link href="/registro" className="text-[13px] text-white/70 hover:text-white transition-colors">
               Registrarse
             </Link>
           </div>

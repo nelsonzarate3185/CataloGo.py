@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (userRecord?.role !== "super_admin") redirect("/dashboard");
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-muted flex">
       <AdminNav />
       <main className="flex-1 p-8 overflow-auto">{children}</main>
     </div>

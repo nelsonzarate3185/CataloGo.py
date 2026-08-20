@@ -11,10 +11,44 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-public), 'Public Sans', system-ui, sans-serif;
+    font-size: var(--text-base);
     -webkit-font-smoothing: antialiased;
   }
+  /* La jerarquía se construye por tamaño, no por peso (referencia Amazon). */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
-    font-weight: 800;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  h1 { font-size: var(--text-2xl); }
+  h2 { font-size: var(--text-xl); }
+  h3 { font-size: var(--text-lg); }
+  h4, h5, h6 { font-size: var(--text-md); }
+
+  /* Foco visible en todo elemento interactivo. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

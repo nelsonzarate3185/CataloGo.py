@@ -18,6 +18,8 @@ export default function QRClient({ url, comercioNombre }: Props) {
       const dataUrl = await QRCode.toDataURL(url, {
         width: 400,
         margin: 2,
+        // Negro sobre blanco: el contraste máximo es requisito para que los
+        // lectores de QR funcionen. No usar tokens de tema acá.
         color: { dark: "#000000", light: "#ffffff" },
       });
       setQrDataUrl(dataUrl);
@@ -38,18 +40,18 @@ export default function QRClient({ url, comercioNombre }: Props) {
 
   return (
     <div className="max-w-md">
-      <div className="bg-white rounded-2xl border p-8 flex flex-col items-center gap-6">
+      <div className="bg-card rounded-2xl border p-8 flex flex-col items-center gap-6">
         {qrDataUrl ? (
-          <div className="border-4 border-gray-900 rounded-xl overflow-hidden">
+          <div className="border-4 border-nav rounded-xl overflow-hidden">
             <Image src={qrDataUrl} alt="QR" width={256} height={256} />
           </div>
         ) : (
-          <div className="w-64 h-64 bg-gray-100 rounded-xl animate-pulse" />
+          <div className="w-64 h-64 bg-muted rounded-xl animate-pulse" />
         )}
 
         <div className="text-center">
-          <p className="font-semibold text-gray-900">{comercioNombre}</p>
-          <p className="text-xs text-gray-400 mt-1 break-all">{url}</p>
+          <p className="font-semibold text-foreground">{comercioNombre}</p>
+          <p className="text-xs text-muted-foreground mt-1 break-all">{url}</p>
         </div>
 
         <div className="flex flex-col gap-2 w-full">
@@ -65,7 +67,7 @@ export default function QRClient({ url, comercioNombre }: Props) {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-2.5 border rounded-lg font-medium hover:bg-gray-50 text-sm text-gray-700"
+            className="flex items-center justify-center gap-2 w-full py-2.5 border rounded-lg font-medium hover:bg-muted text-sm text-foreground"
           >
             <ExternalLink className="w-4 h-4" />
             Ver catálogo

@@ -42,13 +42,13 @@ export default function RecuperarPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md bg-white rounded-xl border p-8 shadow-sm text-center">
+      <div className="min-h-screen flex items-center justify-center bg-muted px-4">
+        <div className="w-full max-w-md bg-card rounded-xl border p-8 shadow-sm text-center">
           <div className="text-4xl mb-4">📧</div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
+          <h1 className="text-xl font-bold text-foreground mb-2">
             Revisá tu email
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Te enviamos un link para restablecer tu contraseña.
           </p>
           <Link
@@ -63,21 +63,21 @@ export default function RecuperarPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-xl border p-8 shadow-sm">
+    <div className="min-h-screen flex items-center justify-center bg-muted px-4">
+      <div className="w-full max-w-md bg-card rounded-xl border p-8 shadow-sm">
         <Link href="/" className="text-xl font-bold text-primary block mb-6">
           CataloGo
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+        <h1 className="text-2xl font-bold text-foreground mb-1">
           Recuperar contraseña
         </h1>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-muted-foreground mb-6">
           Te enviamos un link a tu email para restablecerla.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Email
             </label>
             <input
@@ -87,7 +87,7 @@ export default function RecuperarPage() {
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {errors.email && (
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-destructive mt-1">
                 {errors.email.message}
               </p>
             )}
@@ -104,7 +104,7 @@ export default function RecuperarPage() {
 
         <Link
           href="/login"
-          className="block mt-4 text-center text-sm text-gray-500 hover:text-gray-700"
+          className="block mt-4 text-center text-sm text-muted-foreground hover:text-foreground"
         >
           Volver al inicio de sesión
         </Link>

@@ -25,7 +25,7 @@ export default async function PedidosPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Pedidos recibidos</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Pedidos recibidos</h1>
       <PedidosClient
         pedidos={pedidos ?? []}
         comercioNombre={comercio.nombre}

@@ -48,16 +48,16 @@ export default function ActualizarPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-xl border p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-muted px-4">
+      <div className="w-full max-w-md bg-card rounded-xl border p-8 shadow-sm">
+        <h1 className="text-2xl font-bold text-foreground mb-6">
           Nueva contraseña
         </h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {(["password", "confirmPassword"] as const).map((name) => (
             <div key={name}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 {name === "password" ? "Nueva contraseña" : "Confirmar contraseña"}
               </label>
               <input
@@ -67,7 +67,7 @@ export default function ActualizarPasswordPage() {
                 className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
               {errors[name] && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {errors[name]?.message}
                 </p>
               )}

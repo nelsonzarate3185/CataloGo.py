@@ -92,12 +92,12 @@ export default function PlanesAdminClient({ planes: initial }: Props) {
 
   const field = (key: keyof PlanFormData, label: string, type: "text" | "number" = "text") => (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
       <input
         type={type}
         value={form[key]}
         onChange={(e) => setForm((f) => ({ ...f, [key]: type === "number" ? Number(e.target.value) : e.target.value }))}
-        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         disabled={key === "id" && modal === "edit"}
       />
     </div>
@@ -109,35 +109,35 @@ export default function PlanesAdminClient({ planes: initial }: Props) {
         {planes.map((p) => {
           const d = parsePlanData(p.data);
           return (
-            <div key={p.id} className="bg-white rounded-xl border p-5">
+            <div key={p.id} className="bg-card rounded-xl border p-5">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
-                    <Package className="w-4 h-4 text-orange-500" />
-                    <p className="font-bold text-gray-900 capitalize">{p.name}</p>
+                    <Package className="w-4 h-4 text-primary" />
+                    <p className="font-bold text-foreground capitalize">{p.name}</p>
                   </div>
-                  <p className="text-xs text-gray-400 font-mono">id: {p.id}</p>
+                  <p className="text-xs text-muted-foreground font-mono">id: {p.id}</p>
                 </div>
                 <div className="flex gap-1">
-                  <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                  <button onClick={() => openEdit(p)} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(p.id)}
                     disabled={deletingId === p.id || isPending}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
+                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-40"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
-              <p className="text-2xl font-bold text-gray-900 mb-3">
+              <p className="text-2xl font-bold text-foreground mb-3">
                 {p.price === 0 ? "Gratis" : formatPYG(p.price)}
-                {p.price > 0 && <span className="text-sm font-normal text-gray-400">/mes</span>}
+                {p.price > 0 && <span className="text-sm font-normal text-muted-foreground">/mes</span>}
               </p>
 
-              <div className="space-y-1 text-xs text-gray-500">
+              <div className="space-y-1 text-xs text-muted-foreground">
                 <p>📦 {d.max_products === undefined ? "—" : d.max_products >= 9007199254740991 ? "Ilimitados" : d.max_products} productos</p>
                 <p>📋 {d.max_catalogs === undefined ? "—" : d.max_catalogs >= 9007199254740991 ? "Ilimitados" : d.max_catalogs} catálogos</p>
                 <p>🖼️ {d.max_images ?? "—"} imágenes por producto</p>
@@ -150,7 +150,7 @@ export default function PlanesAdminClient({ planes: initial }: Props) {
         {/* Botón nuevo plan */}
         <button
           onClick={openNew}
-          className="border-2 border-dashed border-orange-300 rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-orange-400 hover:bg-orange-50 transition-colors min-h-[180px]"
+          className="border-2 border-dashed border-primary rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-primary hover:bg-primary/10 transition-colors min-h-[180px]"
         >
           <Plus className="w-6 h-6" />
           <span className="text-sm font-semibold">Nuevo plan</span>
@@ -160,13 +160,13 @@ export default function PlanesAdminClient({ planes: initial }: Props) {
       {/* Modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+          <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-orange-500" />
-                <h2 className="font-semibold text-gray-900">{modal === "new" ? "Nuevo plan" : "Editar plan"}</h2>
+                <CreditCard className="w-4 h-4 text-primary" />
+                <h2 className="font-semibold text-foreground">{modal === "new" ? "Nuevo plan" : "Editar plan"}</h2>
               </div>
-              <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-muted-foreground"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="p-6 space-y-4">
@@ -176,20 +176,20 @@ export default function PlanesAdminClient({ planes: initial }: Props) {
               </div>
               {field("price", "Precio mensual (PYG)", "number")}
               <hr />
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Límites</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Límites</p>
               <div className="grid grid-cols-2 gap-4">
                 {field("max_products", "Productos", "number")}
                 {field("max_catalogs", "Catálogos", "number")}
                 {field("max_images", "Imágenes / producto", "number")}
                 {field("max_branches", "Sucursales", "number")}
               </div>
-              <p className="text-xs text-gray-400">Usá 9007199254740991 para límite ilimitado.</p>
+              <p className="text-xs text-muted-foreground">Usá 9007199254740991 para límite ilimitado.</p>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setModal(null)} className="flex-1 py-2.5 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <button onClick={() => setModal(null)} className="flex-1 py-2.5 border rounded-lg text-sm font-medium text-foreground hover:bg-muted">
                   Cancelar
                 </button>
-                <button onClick={handleSave} disabled={isPending} className="flex-1 py-2.5 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 disabled:opacity-60">
+                <button onClick={handleSave} disabled={isPending} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
                   {isPending ? "Guardando..." : "Guardar"}
                 </button>
               </div>

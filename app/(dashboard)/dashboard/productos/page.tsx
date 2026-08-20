@@ -47,8 +47,8 @@ export default async function ProductosPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Productos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-foreground">Productos</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             {productos.length} producto{productos.length !== 1 ? "s" : ""}
             {limite < Number.MAX_SAFE_INTEGER && ` · ${totalActivos}/${limite} activos`}
           </p>
@@ -56,9 +56,9 @@ export default async function ProductosPage() {
       </div>
 
       {limiteAlcanzado && (
-        <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
-          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-          <span className="text-amber-800">
+        <div className="mb-4 flex items-center gap-3 bg-cat-ambar-fondo border border-cat-ambar/30 rounded-xl p-4 text-sm">
+          <AlertTriangle className="w-4 h-4 text-cat-ambar shrink-0" />
+          <span className="text-cat-ambar">
             Alcanzaste el límite de {limite} productos de tu plan.{" "}
             <a href="/dashboard/configuracion#plan" className="font-semibold underline">
               Mejorar plan
