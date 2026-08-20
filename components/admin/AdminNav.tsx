@@ -29,14 +29,14 @@ export default function AdminNav() {
   }
 
   return (
-    <aside className="w-[220px] bg-gray-900 text-gray-300 flex flex-col min-h-screen shrink-0">
-      <div className="px-5 pt-6 pb-5 border-b border-gray-700">
+    <aside className="w-[220px] bg-nav text-muted-foreground flex flex-col min-h-screen shrink-0">
+      <div className="px-5 pt-6 pb-5 border-b border-nav-sub">
         <div className="flex items-center gap-2 mb-1">
-          <Shield className="w-4 h-4 text-orange-400" />
+          <Shield className="w-4 h-4 text-primary" />
           <span className="font-bold text-white text-[15px]">CataloGo</span>
-          <span className="text-orange-400 font-bold text-[15px]">Admin</span>
+          <span className="text-primary font-bold text-[15px]">Admin</span>
         </div>
-        <p className="text-[11px] text-gray-500">Superadministrador</p>
+        <p className="text-[11px] text-muted-foreground">Superadministrador</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -48,7 +48,7 @@ export default function AdminNav() {
               href={href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium transition-colors",
-                active ? "bg-orange-500 text-white" : "text-gray-300 hover:bg-gray-800"
+                active ? "bg-primary text-white" : "text-muted-foreground hover:bg-nav/90"
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -58,16 +58,16 @@ export default function AdminNav() {
         })}
       </nav>
 
-      <div className="px-3 pb-6 pt-4 border-t border-gray-700 space-y-1">
+      <div className="px-3 pb-6 pt-4 border-t border-nav-sub space-y-1">
         <Link
           href="/dashboard"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium text-gray-400 hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium text-muted-foreground hover:bg-nav/90 transition-colors"
         >
           ← Volver al dashboard
         </Link>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium text-gray-400 hover:bg-gray-800 transition-colors w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium text-muted-foreground hover:bg-nav/90 transition-colors w-full"
         >
           <LogOut className="w-4 h-4 shrink-0" />
           Cerrar sesión

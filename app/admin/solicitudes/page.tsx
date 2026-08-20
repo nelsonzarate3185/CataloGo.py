@@ -23,10 +23,10 @@ export default async function AdminSolicitudesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Solicitudes de plan</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-foreground">Solicitudes de plan</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           {enriched.length} solicitudes totales
-          {pendientes > 0 && <span className="ml-2 text-orange-600 font-semibold">· {pendientes} pendientes</span>}
+          {pendientes > 0 && <span className="ml-2 text-primary font-semibold">· {pendientes} pendientes</span>}
         </p>
       </div>
       <SolicitudesAdminClient solicitudes={enriched} />

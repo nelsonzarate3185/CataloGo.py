@@ -116,19 +116,19 @@ export default function RegistroPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#e9ebe4" }}>
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Top bar */}
-      <div className="px-6 py-4 flex items-center" style={{ background: "#0f1c2e" }}>
+      <div className="flex items-center bg-nav px-6 py-4">
         <Link href="/" className="flex items-baseline gap-[2px]">
           <span className="font-heading text-[22px] text-white">Catalo</span>
           <span className="font-heading text-[22px] text-primary">Go</span>
-          <span className="text-[11px] text-[#8aa0b6] font-bold ml-1">.py</span>
+          <span className="text-[11px] text-white/50 font-bold ml-1">.py</span>
         </Link>
       </div>
 
       {/* Card */}
       <div className="flex-1 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md bg-white rounded-[14px] p-8 shadow-card-md">
+        <div className="w-full max-w-md bg-card rounded-[14px] p-8 shadow-card-md">
           <h1 className="font-heading text-[26px] font-extrabold text-foreground mb-1">
             Creá tu catálogo gratis
           </h1>
@@ -162,8 +162,7 @@ export default function RegistroPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-[12px] rounded-[24px] font-extrabold text-[14.5px] disabled:opacity-60 transition-opacity mt-2"
-              style={{ background: "#f6a623", color: "#1b2733" }}
+              className="w-full py-[12px] rounded-[24px] font-extrabold text-[14.5px] disabled:opacity-60 transition-opacity mt-2 bg-primary text-primary-foreground"
             >
               {loading ? "Creando cuenta..." : "Crear cuenta gratis"}
             </button>

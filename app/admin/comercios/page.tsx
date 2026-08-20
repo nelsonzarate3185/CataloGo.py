@@ -14,8 +14,8 @@ export default async function AdminComerciosPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Negocios</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-foreground">Negocios</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           {comercios?.length ?? 0} negocios registrados en total
         </p>
       </div>
