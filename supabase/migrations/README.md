@@ -42,6 +42,7 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 | `20260821100000_eventos_admin.sql` | ✅ |
 | `20260821120000_comercios_horario_maps.sql` | ✅ |
 | `20260821140000_comercios_columnas_anon_v2.sql` | ✅ |
+| `20260821160000_mensajes.sql` | ⬜ pendiente — sin esto la mensajería falla |
 
 Marcar la casilla al aplicarla.
 

@@ -13,6 +13,7 @@ export type UserStatus = "pending_approval" | "active" | "blocked" | "blocked_un
 export type UserRole = "admin" | "buyer" | "super_admin";
 export type PlanRequestStatus = "pending" | "approved" | "rejected";
 export type EventoAdminTipo = "cuenta_creada" | "tienda_creada";
+export type AutorMensaje = "vendedor" | "admin";
 
 export type Database = {
   public: {
@@ -204,6 +205,35 @@ export type Database = {
           orden?: number;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      mensajes: {
+        Row: {
+          id: string;
+          comercio_id: string;
+          /** 'vendedor' | 'admin' */
+          autor: AutorMensaje;
+          cuerpo: string;
+          /** Momento en que lo leyó el destinatario. NULL = sin leer. */
+          leido_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          comercio_id: string;
+          autor: AutorMensaje;
+          cuerpo: string;
+          leido_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          comercio_id?: string;
+          autor?: AutorMensaje;
+          cuerpo?: string;
+          leido_at?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -474,6 +504,7 @@ export type Categoria = Database["public"]["Tables"]["categorias"]["Row"];
 export type Producto = Database["public"]["Tables"]["productos"]["Row"];
 export type Resena = Database["public"]["Tables"]["resenas"]["Row"];
 export type EventoAdmin = Database["public"]["Tables"]["eventos_admin"]["Row"];
+export type Mensaje = Database["public"]["Tables"]["mensajes"]["Row"];
 export type Pedido = Database["public"]["Tables"]["pedidos"]["Row"];
 export type Suscripcion = Database["public"]["Tables"]["suscripciones"]["Row"];
 export type Sucursal = Database["public"]["Tables"]["sucursales"]["Row"];

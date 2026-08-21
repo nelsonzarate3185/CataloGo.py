@@ -8,6 +8,7 @@ import {
   Tag,
   ShoppingBag,
   Star,
+  MessageSquare,
   QrCode,
   Settings,
   LogOut,
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/dashboard/categorias", label: "Categorías", icon: Tag },
   { href: "/dashboard/pedidos", label: "Pedidos", icon: ShoppingBag },
   { href: "/dashboard/resenas", label: "Reseñas", icon: Star },
+  { href: "/dashboard/mensajes", label: "Consultas", icon: MessageSquare },
   { href: "/dashboard/qr", label: "Mi QR", icon: QrCode },
   { href: "/dashboard/configuracion", label: "Mi tienda", icon: Settings },
 ];
@@ -35,6 +37,8 @@ interface Props {
   comercioSlug: string;
   comercioPlan: PlanTipo;
   isSuperAdmin?: boolean;
+  /** Respuestas de CataloGo que el vendedor todavía no leyó. */
+  mensajesSinLeer?: number;
 }
 
 const claseItem =
@@ -45,6 +49,7 @@ export default function DashboardNav({
   comercioSlug,
   comercioPlan,
   isSuperAdmin,
+  mensajesSinLeer = 0,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -87,6 +92,11 @@ export default function DashboardNav({
             >
               <Icon className="size-[18px] shrink-0" aria-hidden="true" />
               {label}
+              {href === "/dashboard/mensajes" && mensajesSinLeer > 0 && (
+                <span className="ml-auto flex min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-2xs font-bold text-primary-foreground">
+                  {mensajesSinLeer > 99 ? "99+" : mensajesSinLeer}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Store, Users, CreditCard, ClipboardList, Bell, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Store, Users, CreditCard, ClipboardList, Bell, MessageSquare, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard, exact: true },
   { href: "/admin/novedades", label: "Novedades", icon: Bell },
+  { href: "/admin/mensajes", label: "Mensajes", icon: MessageSquare },
   { href: "/admin/usuarios", label: "Usuarios", icon: Users },
   { href: "/admin/solicitudes", label: "Solicitudes", icon: ClipboardList },
   { href: "/admin/planes", label: "Planes", icon: CreditCard },
@@ -20,7 +21,13 @@ const navItems = [
  * del servidor. Pedirlo otra vez desde el cliente duplicaría la consulta en
  * cada navegación del panel.
  */
-export default function AdminNav({ sinLeer = 0 }: { sinLeer?: number }) {
+export default function AdminNav({
+  sinLeer = 0,
+  mensajesSinLeer = 0,
+}: {
+  sinLeer?: number;
+  mensajesSinLeer?: number;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();

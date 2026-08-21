@@ -23,6 +23,14 @@ export default async function DashboardLayout({
 
   const isSuperAdmin = userRecord?.role === "super_admin";
 
+  // Sin leer para el vendedor son las respuestas del admin.
+  const { count: mensajesSinLeer } = await supabase
+    .from("mensajes")
+    .select("id", { count: "exact", head: true })
+    .eq("comercio_id", comercio.id)
+    .eq("autor", "admin")
+    .is("leido_at", null);
+
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardNav
@@ -30,6 +38,7 @@ export default async function DashboardLayout({
         comercioSlug={comercio.slug}
         comercioPlan={comercio.plan}
         isSuperAdmin={isSuperAdmin}
+        mensajesSinLeer={mensajesSinLeer ?? 0}
       />
       <main className="flex-1 p-7 overflow-auto">{children}</main>
     </div>
