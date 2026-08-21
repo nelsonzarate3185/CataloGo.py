@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCatalogoPorSlug } from "@/lib/catalogo";
 import CatalogoHeader from "@/components/catalogo/CatalogoHeader";
+import InfoVendedor from "@/components/catalogo/InfoVendedor";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -28,6 +29,7 @@ export default async function CatalogoLayout({ params, children }: Props) {
         nombreCatalogo={catalogo.nombre}
       />
       {children}
+      <InfoVendedor comercio={catalogo.comercios} />
     </div>
   );
 }
