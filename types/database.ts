@@ -208,6 +208,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      pagos: {
+        Row: {
+          id: string;
+          comercio_id: string;
+          /** Monto en guaraníes, sin decimales. */
+          monto: number;
+          /** Plan cubierto, copiado al momento del pago. */
+          plan: string;
+          periodo_desde: string;
+          /** Fecha de vencimiento del período pagado. */
+          periodo_hasta: string;
+          metodo: string | null;
+          nota: string | null;
+          registrado_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          comercio_id: string;
+          monto: number;
+          plan: string;
+          periodo_desde: string;
+          periodo_hasta: string;
+          metodo?: string | null;
+          nota?: string | null;
+          registrado_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          comercio_id?: string;
+          monto?: number;
+          plan?: string;
+          periodo_desde?: string;
+          periodo_hasta?: string;
+          metodo?: string | null;
+          nota?: string | null;
+          registrado_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       mensajes: {
         Row: {
           id: string;
@@ -505,6 +547,7 @@ export type Producto = Database["public"]["Tables"]["productos"]["Row"];
 export type Resena = Database["public"]["Tables"]["resenas"]["Row"];
 export type EventoAdmin = Database["public"]["Tables"]["eventos_admin"]["Row"];
 export type Mensaje = Database["public"]["Tables"]["mensajes"]["Row"];
+export type Pago = Database["public"]["Tables"]["pagos"]["Row"];
 export type Pedido = Database["public"]["Tables"]["pedidos"]["Row"];
 export type Suscripcion = Database["public"]["Tables"]["suscripciones"]["Row"];
 export type Sucursal = Database["public"]["Tables"]["sucursales"]["Row"];

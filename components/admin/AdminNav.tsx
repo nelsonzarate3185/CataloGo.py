@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Store, Users, CreditCard, ClipboardList, Bell, MessageSquare, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Store, Users, CreditCard, ClipboardList, Bell, MessageSquare, Wallet, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin/usuarios", label: "Usuarios", icon: Users },
   { href: "/admin/solicitudes", label: "Solicitudes", icon: ClipboardList },
   { href: "/admin/planes", label: "Planes", icon: CreditCard },
+  { href: "/admin/cobros", label: "Cobros", icon: Wallet },
   { href: "/admin/comercios", label: "Negocios", icon: Store },
 ];
 

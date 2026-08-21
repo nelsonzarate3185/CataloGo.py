@@ -43,6 +43,7 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 | `20260821120000_comercios_horario_maps.sql` | ✅ |
 | `20260821140000_comercios_columnas_anon_v2.sql` | ✅ |
 | `20260821160000_mensajes.sql` | ✅ |
+| `20260821180000_pagos.sql` | ⬜ pendiente — sin esto /admin/cobros falla |
 
 Marcar la casilla al aplicarla.
 
