@@ -12,6 +12,7 @@ export type PedidoEstado = "pendiente" | "confirmado" | "entregado" | "cancelado
 export type UserStatus = "pending_approval" | "active" | "blocked" | "blocked_unpaid" | "suspended";
 export type UserRole = "admin" | "buyer" | "super_admin";
 export type PlanRequestStatus = "pending" | "approved" | "rejected";
+export type EventoAdminTipo = "cuenta_creada" | "tienda_creada";
 
 export type Database = {
   public: {
@@ -195,6 +196,38 @@ export type Database = {
           orden?: number;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      eventos_admin: {
+        Row: {
+          id: string;
+          /** 'cuenta_creada' | 'tienda_creada' */
+          tipo: EventoAdminTipo;
+          user_id: string | null;
+          comercio_id: string | null;
+          /** Datos copiados al momento del evento: email, nombre, slug, plan. */
+          datos: Json;
+          leido_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tipo: EventoAdminTipo;
+          user_id?: string | null;
+          comercio_id?: string | null;
+          datos?: Json;
+          leido_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tipo?: EventoAdminTipo;
+          user_id?: string | null;
+          comercio_id?: string | null;
+          datos?: Json;
+          leido_at?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -432,6 +465,7 @@ export type Catalogo = Database["public"]["Tables"]["catalogos"]["Row"];
 export type Categoria = Database["public"]["Tables"]["categorias"]["Row"];
 export type Producto = Database["public"]["Tables"]["productos"]["Row"];
 export type Resena = Database["public"]["Tables"]["resenas"]["Row"];
+export type EventoAdmin = Database["public"]["Tables"]["eventos_admin"]["Row"];
 export type Pedido = Database["public"]["Tables"]["pedidos"]["Row"];
 export type Suscripcion = Database["public"]["Tables"]["suscripciones"]["Row"];
 export type Sucursal = Database["public"]["Tables"]["sucursales"]["Row"];

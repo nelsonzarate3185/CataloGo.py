@@ -17,9 +17,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (userRecord?.role !== "super_admin") redirect("/dashboard");
 
+  // El contador se resuelve acá y viaja al nav como prop: el layout ya es
+  // dinámico, así que no agrega ninguna consulta extra por navegación.
+  const { count } = await supabase
+    .from("eventos_admin")
+    .select("id", { count: "exact", head: true })
+    .is("leido_at", null);
+
   return (
     <div className="min-h-screen bg-muted flex">
-      <AdminNav />
+      <AdminNav sinLeer={count ?? 0} />
       <main className="flex-1 p-8 overflow-auto">{children}</main>
     </div>
   );
