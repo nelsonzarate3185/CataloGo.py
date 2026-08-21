@@ -30,15 +30,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ya tenés este plan activo" }, { status: 400 });
   }
 
-  // Verificar si ya hay una solicitud pendiente para este negocio
-  const { data: existente } = await supabase
+  // Verificar si ya hay una solicitud pendiente para este negocio.
+  // Se pide un array y no maybeSingle: con más de una fila pendiente,
+  // maybeSingle devuelve error y el código anterior lo descartaba, seguía de
+  // largo e intentaba insertar igual.
+  const { data: pendientes, error: errorPendientes } = await supabase
     .from("plan_requests")
     .select("id")
     .eq("vendor_id", user.id)
     .eq("status", "pending")
-    .maybeSingle();
+    .limit(1);
 
-  if (existente) {
+  if (errorPendientes) {
+    return NextResponse.json(
+      { error: `No pudimos verificar tus solicitudes: ${errorPendientes.message}` },
+      { status: 500 }
+    );
+  }
+
+  if (pendientes && pendientes.length > 0) {
     return NextResponse.json(
       { error: "Ya tenés una solicitud de cambio de plan pendiente. El administrador la procesará pronto." },
       { status: 409 }
@@ -61,7 +71,17 @@ export async function POST(request: NextRequest) {
     });
 
   if (error) {
-    return NextResponse.json({ error: "Error al crear la solicitud" }, { status: 500 });
+    // Se devuelve el mensaje de la base y no uno genérico. El anterior
+    // ocultaba la causa y obligaba a diagnosticar a ciegas; esta ruta la usa
+    // el dueño autenticado desde su panel, no un visitante.
+    return NextResponse.json(
+      {
+        error: `No pudimos crear la solicitud: ${error.message}`,
+        codigo: error.code,
+        detalle: error.details ?? null,
+      },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ success: true, plan });
