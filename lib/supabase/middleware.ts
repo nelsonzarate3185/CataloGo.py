@@ -31,6 +31,15 @@ export async function updateSession(request: NextRequest) {
   // vacío en runtime, y createServerClient lanza en ese caso.
   if (!url || !anonKey) return degradar(request);
 
+  // Una URL sin esquema pasa el chequeo de arriba pero hace lanzar a
+  // createServerClient, que la parsea. Es un error de configuración fácil de
+  // cometer al copiarla del panel de Supabase.
+  try {
+    new URL(url);
+  } catch {
+    return degradar(request);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(
