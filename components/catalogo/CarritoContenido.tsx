@@ -16,6 +16,7 @@ import {
 import { useMontado } from "@/hooks/useMontado";
 import { createClient } from "@/lib/supabase/client";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { baseUrlCliente } from "@/lib/urls";
 import { formatGS } from "@/lib/utils";
 import type { CatalogoConRelaciones } from "@/types/catalogo";
 
@@ -58,6 +59,10 @@ export default function CarritoContenido({ slug, catalogoId, comercio }: Props) 
       whatsapp: comercio.whatsapp,
       nombreComercio: comercio.nombre,
       items: pedidoItems,
+      // Con esto cada línea del pedido lleva el enlace al producto, para que el
+      // vendedor vea de inmediato qué le están pidiendo.
+      baseUrl: baseUrlCliente(),
+      slug,
     });
 
     const supabase = createClient();

@@ -5,20 +5,41 @@ export interface WhatsAppOrderOptions {
   whatsapp: string;
   nombreComercio: string;
   items: PedidoItem[];
+  /**
+   * Origen del sitio y slug del comercio. Con ambos, cada línea del pedido
+   * incluye el enlace al producto. Si falta alguno se arma el mensaje sin
+   * enlaces en vez de generar URLs rotas.
+   */
+  baseUrl?: string;
+  slug?: string;
 }
 
-/** Genera el mensaje formateado y la URL de WhatsApp */
-export function buildWhatsAppUrl(options: WhatsAppOrderOptions): string {
-  const { whatsapp, nombreComercio, items } = options;
+/**
+ * Tope de caracteres del mensaje ya codificado.
+ *
+ * wa.me recibe el texto como parámetro de URL, y los navegadores truncan las
+ * URLs muy largas. Un pedido cortado a la mitad es peor que un pedido sin
+ * enlaces, así que al superarse este tope se omiten los enlaces por producto.
+ * El valor es conservador: la codificación infla bastante, porque cada salto
+ * de línea y cada acento ocupan tres caracteres.
+ */
+const MAX_LARGO_CODIFICADO = 3500;
 
-  const lineas = items.map(
-    (item) =>
-      `• ${item.nombre} x${item.cantidad} — ${formatGS(item.precio * item.cantidad)}`
-  );
+function armarMensaje(
+  nombreComercio: string,
+  items: PedidoItem[],
+  enlaceDe: ((item: PedidoItem) => string) | null
+): string {
+  const lineas = items.flatMap((item) => {
+    const linea = `• ${item.nombre} x${item.cantidad} — ${formatGS(
+      item.precio * item.cantidad
+    )}`;
+    return enlaceDe ? [linea, enlaceDe(item)] : [linea];
+  });
 
   const total = items.reduce((sum, i) => sum + i.precio * i.cantidad, 0);
 
-  const mensaje = [
+  return [
     "Hola! Quiero hacer el siguiente pedido:",
     "",
     `🛍️ *${nombreComercio}*`,
@@ -29,6 +50,24 @@ export function buildWhatsAppUrl(options: WhatsAppOrderOptions): string {
     "",
     "Gracias!",
   ].join("\n");
+}
+
+/** Genera el mensaje formateado y la URL de WhatsApp */
+export function buildWhatsAppUrl(options: WhatsAppOrderOptions): string {
+  const { whatsapp, nombreComercio, items, baseUrl, slug } = options;
+
+  const puedeEnlazar = Boolean(baseUrl && slug);
+  const enlaceDe = puedeEnlazar
+    ? (item: PedidoItem) => `${baseUrl}/c/${slug}/p/${item.producto_id}`
+    : null;
+
+  let mensaje = armarMensaje(nombreComercio, items, enlaceDe);
+
+  // Con carritos grandes los enlaces pueden empujar la URL más allá de lo que
+  // el navegador acepta. Se rehace sin ellos antes que arriesgar el pedido.
+  if (enlaceDe && encodeURIComponent(mensaje).length > MAX_LARGO_CODIFICADO) {
+    mensaje = armarMensaje(nombreComercio, items, null);
+  }
 
   return `${whatsappUrl(whatsapp)}?text=${encodeURIComponent(mensaje)}`;
 }
