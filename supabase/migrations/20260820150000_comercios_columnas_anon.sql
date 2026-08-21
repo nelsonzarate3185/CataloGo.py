@@ -1,3 +1,12 @@
+-- ############################################################################
+-- ## NO CORRER ESTE ARCHIVO. SUSTITUIDO POR
+-- ## 20260821140000_comercios_columnas_anon_v2.sql
+-- ##
+-- ## Nunca se aplicó y quedó desactualizado: concede ocho columnas, y después
+-- ## se agregaron horario_atencion y maps_url. Correrlo hoy revocaría el
+-- ## acceso a esas dos y rompería el catálogo público.
+-- ############################################################################
+
 -- Migración: restringir columnas de comercios para el visitante anónimo
 --
 -- Continuación de 20260820140000_comercios_lectura_publica.sql, que agregó la
