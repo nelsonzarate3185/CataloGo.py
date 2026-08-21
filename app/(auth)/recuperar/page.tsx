@@ -20,7 +20,6 @@ type Form = z.infer<typeof schema>;
 export default function RecuperarPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -30,6 +29,11 @@ export default function RecuperarPage() {
 
   async function onSubmit(data: Form) {
     setLoading(true);
+  // El cliente se construye dentro de los manejadores y no en el cuerpo del
+  // componente: el cuerpo también corre durante el prerender del servidor, y
+  // ahí `createBrowserClient` lanza si faltan las variables de entorno,
+  // tumbando el build entero. Los manejadores sólo corren en el navegador.
+    const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
       redirectTo: urlCallbackAuth("/actualizar-password"),
     });
