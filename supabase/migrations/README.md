@@ -37,16 +37,17 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 |---|---|
 | `20260820000000_productos_precio_anterior_stock_marca.sql` | ✅ |
 | `20260820120000_resenas.sql` | ✅ |
-| `20260820140000_comercios_lectura_publica.sql` | ⬜ **pendiente — el catálogo público da 404 sin esto** |
-| `20260820150000_comercios_columnas_anon.sql` | ⬜ pendiente — correr sólo con el código nuevo ya desplegado |
 | `20260820140000_comercios_lectura_publica.sql` | ✅ |
-| `20260821100000_eventos_admin.sql` | ⬜ pendiente — sin esto /admin/novedades falla |
-| `20260821120000_comercios_horario_maps.sql` | ⬜ pendiente — sin esto el catálogo público falla |
+| `20260820150000_comercios_columnas_anon.sql` | ✅ |
+| `20260821100000_eventos_admin.sql` | ✅ |
+| `20260821120000_comercios_horario_maps.sql` | ✅ |
 
 Marcar la casilla al aplicarla.
 
-## Dependencias con el deploy
+## Cuidado con las columnas de `comercios`
 
-`20260820150000` revoca el acceso de `anon` a columnas que el código anterior
-seleccionaba. Correrla antes de que el código nuevo esté vivo rompe el catálogo.
-Verificar con `GET /api/resenas`: debe responder 405, no 404.
+El acceso de `anon` a `comercios` se concede **columna por columna**
+(`20260820150000`). Una columna nueva no hereda ese permiso: si el catálogo
+público la necesita, hay que agregarla al `grant` en la misma migración que la
+crea, como se hizo en `20260821120000`. Olvidarlo rompe el catálogo en cuanto
+el código que la pide llega a producción.
