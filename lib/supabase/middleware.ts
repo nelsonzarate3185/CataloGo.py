@@ -2,6 +2,16 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 
+/** Supabase sólo acepta URLs http o https. */
+function esUrlHttpValida(valor: string): boolean {
+  try {
+    const { protocol } = new URL(valor);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 /** Rutas que exigen sesión. El resto es público. */
 function esRutaProtegida(pathname: string): boolean {
   return pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
@@ -31,12 +41,16 @@ export async function updateSession(request: NextRequest) {
   // vacío en runtime, y createServerClient lanza en ese caso.
   if (!url || !anonKey) return degradar(request);
 
-  // Una URL sin esquema pasa el chequeo de arriba pero hace lanzar a
-  // createServerClient, que la parsea. Es un error de configuración fácil de
-  // cometer al copiarla del panel de Supabase.
-  try {
-    new URL(url);
-  } catch {
+  // Supabase exige http o https. Una URL sin esquema pasa el chequeo de arriba
+  // pero hace lanzar a createServerClient con "Invalid supabaseUrl". Es un
+  // error fácil de cometer al copiar el valor del panel.
+  if (!esUrlHttpValida(url)) {
+    // Registrado y no silenciado: la aplicación queda degradada y sin esto no
+    // habría rastro de por qué. No incluye la clave, sólo la URL mal formada.
+    console.error(
+      `[middleware] NEXT_PUBLIC_SUPABASE_URL inválida: "${url}". ` +
+        `Tiene que empezar con https:// (ej: https://tu-proyecto.supabase.co).`
+    );
     return degradar(request);
   }
 
