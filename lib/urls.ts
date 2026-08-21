@@ -14,26 +14,34 @@
 export function baseUrlCliente(): string {
   const configurada = process.env.NEXT_PUBLIC_APP_URL?.trim();
 
-  // Se valida el esquema en vez de confiar en el valor: cargada sin https://
-  // produce un redirectTo malformado que el proveedor de OAuth rechaza, y el
-  // fallo aparece recién a mitad del login. Ante un valor inválido conviene el
-  // origen real del navegador, que siempre es correcto.
-  if (configurada && esUrlHttpValida(configurada)) {
-    return configurada.replace(/\/$/, "");
-  }
+  // Se toma sólo el origen y se descarta cualquier ruta que traiga el valor.
+  // La lista blanca de Supabase se escribe con comodín ("https://sitio/**") y
+  // es fácil copiar esa forma acá; sin recortarla, el enlace de callback sale
+  // como "https://sitio/**/api/auth/callback" y da 404.
+  //
+  // También se valida el esquema: cargada sin https:// produce un redirectTo
+  // que el proveedor de OAuth rechaza. Ante cualquier valor inválido conviene
+  // el origen real del navegador, que siempre es correcto.
+  const origen = origenDe(configurada);
+  if (origen) return origen;
 
   if (typeof window !== "undefined") return window.location.origin;
 
   return "";
 }
 
-/** Sólo http o https sirven como base para enlaces de autenticación. */
-function esUrlHttpValida(valor: string): boolean {
+/**
+ * Origen (esquema + host + puerto) de un valor configurado, o null si no sirve
+ * como base de enlaces. Descarta ruta, query y comodines.
+ */
+function origenDe(valor: string | undefined): string | null {
+  if (!valor) return null;
   try {
-    const { protocol } = new URL(valor);
-    return protocol === "http:" || protocol === "https:";
+    const url = new URL(valor);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.origin;
   } catch {
-    return false;
+    return null;
   }
 }
 
