@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { baseUrlServidor, urlCatalogo } from "@/lib/urls";
 import { generateQRBuffer } from "@/lib/qr";
 
 export async function GET(request: NextRequest) {
@@ -7,12 +8,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "slug requerido" }, { status: 400 });
   }
 
-  const host = request.headers.get("host") ?? "";
-  const proto = request.headers.get("x-forwarded-proto") ?? "https";
-  const dynamicBase = host ? `${proto}://${host}` : "";
-  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? dynamicBase;
-  const appUrl = rawAppUrl.startsWith("http") ? rawAppUrl : `https://${rawAppUrl}`;
-  const url = `${appUrl}/c/${slug}`;
+  const url = urlCatalogo(baseUrlServidor(request.headers), slug);
 
   try {
     const buffer = await generateQRBuffer(url);

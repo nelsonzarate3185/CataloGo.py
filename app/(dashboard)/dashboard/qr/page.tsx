@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { baseUrlServidor, urlCatalogo } from "@/lib/urls";
 import QRClient from "@/components/dashboard/qr/QRClient";
 
 export default async function QRPage() {
@@ -18,12 +19,8 @@ export default async function QRPage() {
   if (!comercio) redirect("/registro");
 
   const reqHeaders = await headers();
-  const host = reqHeaders.get("host") ?? "";
-  const proto = reqHeaders.get("x-forwarded-proto") ?? "https";
-  const dynamicBase = host ? `${proto}://${host}` : "";
-  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? dynamicBase;
-  const appUrl = rawAppUrl.startsWith("http") ? rawAppUrl : `https://${rawAppUrl}`;
-  const catalogoUrl = `${appUrl}/c/${comercio.slug}`;
+  const appUrl = baseUrlServidor(reqHeaders);
+  const catalogoUrl = urlCatalogo(appUrl, comercio.slug);
 
   return (
     <div>

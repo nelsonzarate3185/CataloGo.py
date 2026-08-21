@@ -50,3 +50,37 @@ export function urlCallbackAuth(next?: string): string {
   const base = `${baseUrlCliente()}/api/auth/callback`;
   return next ? `${base}?next=${encodeURIComponent(next)}` : base;
 }
+
+/**
+ * Primera opción válida de una lista de candidatos, normalizada a su origen.
+ * Devuelve cadena vacía si ninguno sirve.
+ */
+export function normalizarBase(...candidatos: (string | null | undefined)[]): string {
+  for (const candidato of candidatos) {
+    const origen = origenDe(candidato ?? undefined);
+    if (origen) return origen;
+  }
+  return "";
+}
+
+/**
+ * URL base en el servidor: la configurada si es válida, y si no el host real
+ * del request.
+ *
+ * Los llamadores construían esto a mano con `startsWith("http")`, que no
+ * detecta un comodín ni una ruta pegada al valor. Eso produjo enlaces del tipo
+ * "https://sitio/**\/c/slug", y en el generador de QR el problema es serio: un
+ * código impreso con la URL mal no se puede corregir después.
+ */
+export function baseUrlServidor(headers: Headers): string {
+  const host = headers.get("host") ?? "";
+  const proto = headers.get("x-forwarded-proto") ?? "https";
+  const delRequest = host ? `${proto}://${host}` : null;
+
+  return normalizarBase(process.env.NEXT_PUBLIC_APP_URL, delRequest);
+}
+
+/** URL pública del catálogo de un comercio. */
+export function urlCatalogo(base: string, slug: string): string {
+  return `${base}/c/${slug}`;
+}

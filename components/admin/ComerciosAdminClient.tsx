@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ExternalLink, ChevronDown, Search, ToggleLeft, ToggleRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { baseUrlCliente } from "@/lib/urls";
 import type { PlanTipo } from "@/types/database";
 
 type Comercio = {
@@ -75,8 +76,7 @@ export default function ComerciosAdminClient({ comercios: initial }: Props) {
     toast.success(!activo ? "Negocio activado" : "Negocio desactivado");
   }
 
-  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const appUrl = rawAppUrl.startsWith("http") ? rawAppUrl : `https://${rawAppUrl}`;
+  const appUrl = baseUrlCliente();
 
   return (
     <div>

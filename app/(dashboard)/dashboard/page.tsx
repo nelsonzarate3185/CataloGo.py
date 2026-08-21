@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { baseUrlServidor, urlCatalogo } from "@/lib/urls";
 import Link from "next/link";
 import { AlertTriangle, Package, ShoppingBag, Star, TrendingUp, ExternalLink } from "lucide-react";
 import CopyLinkButton from "@/components/dashboard/CopyLinkButton";
@@ -88,12 +89,8 @@ export default async function DashboardPage() {
   const porcentajeUso =
     limiteProductos === Infinity ? 0 : (totalProductos / limiteProductos) * 100;
   const reqHeaders = await headers();
-  const host = reqHeaders.get("host") ?? "";
-  const proto = reqHeaders.get("x-forwarded-proto") ?? "https";
-  const dynamicBase = host ? `${proto}://${host}` : "";
-  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? dynamicBase;
-  const appUrl = rawAppUrl.startsWith("http") ? rawAppUrl : `https://${rawAppUrl}`;
-  const catalogoUrl = `${appUrl}/c/${comercio.slug}`;
+  const appUrl = baseUrlServidor(reqHeaders);
+  const catalogoUrl = urlCatalogo(appUrl, comercio.slug);
 
   const fechaHoy = new Date().toLocaleDateString("es-PY", {
     weekday: "long",
