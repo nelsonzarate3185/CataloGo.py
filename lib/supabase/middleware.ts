@@ -2,12 +2,40 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 
+/** Rutas que exigen sesión. El resto es público. */
+function esRutaProtegida(pathname: string): boolean {
+  return pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+}
+
+/**
+ * Respuesta cuando no se puede determinar la sesión.
+ *
+ * El middleware corre en todas las rutas, así que si lanza cae el sitio
+ * entero: catálogos públicos de todos los comercios incluidos. Ante una
+ * configuración incompleta o una falla de Supabase conviene degradar, no
+ * morir. Lo público sigue sirviéndose; lo protegido va al login, que es el
+ * lado seguro cuando no se puede verificar quién es el visitante.
+ */
+function degradar(request: NextRequest) {
+  if (esRutaProtegida(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+  return NextResponse.next({ request });
+}
+
 export async function updateSession(request: NextRequest) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Las aserciones `!` son sólo de TypeScript: no impiden que el valor llegue
+  // vacío en runtime, y createServerClient lanza en ese caso.
+  if (!url || !anonKey) return degradar(request);
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {
@@ -26,16 +54,19 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Una falla de red contra Supabase no puede tumbar el catálogo público.
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    return degradar(request);
+  }
 
   const pathname = request.nextUrl.pathname;
-  const isDashboard = pathname.startsWith("/dashboard");
-  const isAdmin = pathname.startsWith("/admin");
   const isAuth = pathname.startsWith("/login");
 
-  if ((isDashboard || isAdmin) && !user) {
+  if (esRutaProtegida(pathname) && !user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
