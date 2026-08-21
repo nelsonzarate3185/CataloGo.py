@@ -91,15 +91,27 @@ export default function LoginPage() {
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: urlCallbackAuth(),
-      },
-    });
-    if (error) {
-      toast.error("Error al iniciar sesión con Google");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: urlCallbackAuth() },
+      });
+
+      // Sin error el navegador se va a Google, así que el estado de carga se
+      // mantiene a propósito hasta que ocurra la navegación.
+      if (error) {
+        toast.error(`No pudimos abrir el acceso con Google: ${error.message}`);
+        setGoogleLoading(false);
+      }
+    } catch (err) {
+      // Sin este catch, una excepción dejaba el botón en "Redirigiendo…" para
+      // siempre y sin ninguna señal de qué había fallado.
+      toast.error(
+        err instanceof Error
+          ? `No pudimos abrir el acceso con Google: ${err.message}`
+          : "No pudimos abrir el acceso con Google."
+      );
       setGoogleLoading(false);
     }
   }

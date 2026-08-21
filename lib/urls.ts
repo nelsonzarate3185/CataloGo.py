@@ -13,11 +13,28 @@
  */
 export function baseUrlCliente(): string {
   const configurada = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (configurada) return configurada.replace(/\/$/, "");
+
+  // Se valida el esquema en vez de confiar en el valor: cargada sin https://
+  // produce un redirectTo malformado que el proveedor de OAuth rechaza, y el
+  // fallo aparece recién a mitad del login. Ante un valor inválido conviene el
+  // origen real del navegador, que siempre es correcto.
+  if (configurada && esUrlHttpValida(configurada)) {
+    return configurada.replace(/\/$/, "");
+  }
 
   if (typeof window !== "undefined") return window.location.origin;
 
   return "";
+}
+
+/** Sólo http o https sirven como base para enlaces de autenticación. */
+function esUrlHttpValida(valor: string): boolean {
+  try {
+    const { protocol } = new URL(valor);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 /** URL absoluta del callback de autenticación, con destino posterior opcional. */
