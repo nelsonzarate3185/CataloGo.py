@@ -7,7 +7,14 @@ export interface CatalogoConRelaciones extends Catalogo {
    */
   comercios: Pick<
     Comercio,
-    "id" | "nombre" | "descripcion" | "whatsapp" | "logo_url" | "direccion"
+    | "id"
+    | "nombre"
+    | "descripcion"
+    | "whatsapp"
+    | "logo_url"
+    | "direccion"
+    | "horario_atencion"
+    | "maps_url"
   >;
   categorias: Categoria[];
   productos: Producto[];

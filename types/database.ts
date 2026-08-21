@@ -28,6 +28,10 @@ export type Database = {
           whatsapp: string;
           rubro: string | null;
           direccion: string | null;
+          /** Horario de atención en texto libre. */
+          horario_atencion: string | null;
+          /** Enlace de Google Maps al local. */
+          maps_url: string | null;
           plan: PlanTipo;
           plan_expira_at: string | null;
           activo: boolean;
@@ -46,6 +50,8 @@ export type Database = {
           whatsapp: string;
           rubro?: string | null;
           direccion?: string | null;
+          horario_atencion?: string | null;
+          maps_url?: string | null;
           plan?: PlanTipo;
           plan_expira_at?: string | null;
           activo?: boolean;
@@ -63,6 +69,8 @@ export type Database = {
           whatsapp?: string;
           rubro?: string | null;
           direccion?: string | null;
+          horario_atencion?: string | null;
+          maps_url?: string | null;
           plan?: PlanTipo;
           plan_expira_at?: string | null;
           activo?: boolean;

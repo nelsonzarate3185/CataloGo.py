@@ -41,6 +41,7 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 | `20260820150000_comercios_columnas_anon.sql` | ⬜ pendiente — correr sólo con el código nuevo ya desplegado |
 | `20260820140000_comercios_lectura_publica.sql` | ✅ |
 | `20260821100000_eventos_admin.sql` | ⬜ pendiente — sin esto /admin/novedades falla |
+| `20260821120000_comercios_horario_maps.sql` | ⬜ pendiente — sin esto el catálogo público falla |
 
 Marcar la casilla al aplicarla.
 

@@ -17,6 +17,17 @@ const perfilSchema = z.object({
   whatsapp: z.string().regex(/^\d{9}$/, "9 dígitos sin el 0 (ej: 981123456)"),
   rubro: z.string().optional(),
   direccion: z.string().optional(),
+  horario_atencion: z.string().optional(),
+  // Se valida que sea un enlace real: un texto suelto acá produce un botón
+  // "Cómo llegar" que no lleva a ninguna parte, peor que no mostrarlo.
+  maps_url: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (v) => !v || /^https?:\/\//.test(v),
+      "Pegá el enlace completo, empezando con https://"
+    ),
 });
 
 const passwordSchema = z
@@ -85,6 +96,8 @@ export default function ConfiguracionClient({ comercio, userEmail, planPendiente
       whatsapp: comercio.whatsapp,
       rubro: comercio.rubro ?? "",
       direccion: comercio.direccion ?? "",
+      horario_atencion: comercio.horario_atencion ?? "",
+      maps_url: comercio.maps_url ?? "",
     },
   });
 
@@ -130,6 +143,8 @@ export default function ConfiguracionClient({ comercio, userEmail, planPendiente
           whatsapp: data.whatsapp,
           rubro: data.rubro || null,
           direccion: data.direccion || null,
+          horario_atencion: data.horario_atencion?.trim() || null,
+          maps_url: data.maps_url?.trim() || null,
           logo_url,
         })
         .eq("id", comercio.id);
@@ -228,6 +243,42 @@ export default function ConfiguracionClient({ comercio, userEmail, planPendiente
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <p className="text-xs text-muted-foreground mt-1">Se mostrará en tu catálogo público si la completás.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Ubicación en Google Maps (opcional)
+            </label>
+            <input
+              {...perfilForm.register("maps_url")}
+              type="url"
+              placeholder="https://maps.app.goo.gl/..."
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {perfilForm.formState.errors.maps_url && (
+              <p className="text-xs text-destructive mt-1">
+                {perfilForm.formState.errors.maps_url.message}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Abrí tu local en Google Maps, tocá <strong>Compartir</strong> y pegá el
+              enlace acá. Lleva al comprador al punto exacto.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Horario de atención (opcional)
+            </label>
+            <textarea
+              {...perfilForm.register("horario_atencion")}
+              rows={3}
+              placeholder={"Ej: Lunes a viernes de 8:00 a 18:00\nSábados de 8:00 a 12:00\nDomingos cerrado"}
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Escribilo como quieras: se muestra tal cual, respetando los saltos de línea.
+            </p>
           </div>
 
           <div>
