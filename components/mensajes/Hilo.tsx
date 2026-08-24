@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -26,6 +27,7 @@ interface Props {
  */
 export default function Hilo({ comercioId, autor, mensajes: iniciales, ayuda }: Props) {
   const supabase = createClient();
+  const router = useRouter();
   const [mensajes, setMensajes] = useState(iniciales);
   const [cuerpo, setCuerpo] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -45,13 +47,27 @@ export default function Hilo({ comercioId, autor, mensajes: iniciales, ayuda }: 
 
     if (sinLeer.length === 0) return;
 
-    // Marcar al abrir: si falla, se reintenta en la próxima visita. No se
-    // avisa del fallo porque no cambia nada que el usuario pueda hacer.
-    void supabase
-      .from("mensajes")
-      .update({ leido_at: new Date().toISOString() })
-      .in("id", sinLeer);
-  }, [iniciales, contraparte, supabase]);
+    async function marcar(ids: string[]) {
+      const { error } = await supabase
+        .from("mensajes")
+        .update({ leido_at: new Date().toISOString() })
+        .in("id", ids);
+
+      if (error) {
+        // No se descarta el error: si RLS lo rechaza, el contador queda
+        // clavado para siempre y sin esta señal no habría forma de saberlo.
+        toast.error(`No pudimos marcar como leído: ${error.message}`);
+        return;
+      }
+
+      // El contador del panel se calcula en el layout, del lado del servidor.
+      // Sin este refresco el badge sigue mostrando el valor previo aunque el
+      // mensaje ya esté leído.
+      router.refresh();
+    }
+
+    void marcar(sinLeer);
+  }, [iniciales, contraparte, supabase, router]);
 
   async function enviar(evento: React.FormEvent) {
     evento.preventDefault();
