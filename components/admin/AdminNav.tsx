@@ -1,10 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Store, Users, CreditCard, ClipboardList, Bell, MessageSquare, Wallet, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Store, Users, CreditCard, ClipboardList, Bell, MessageSquare, Wallet, LogOut, Shield, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const navItems = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard, exact: true },
@@ -22,13 +29,21 @@ const navItems = [
  * del servidor. Pedirlo otra vez desde el cliente duplicaría la consulta en
  * cada navegación del panel.
  */
-export default function AdminNav({
-  sinLeer = 0,
-  mensajesSinLeer = 0,
-}: {
+interface Props {
   sinLeer?: number;
   mensajesSinLeer?: number;
-}) {
+}
+
+/**
+ * Contenido del menú, compartido por la barra lateral y el cajón de móvil.
+ * Duplicarlo habría hecho que las dos versiones se desincronizaran en cuanto se
+ * agregara una sección.
+ */
+function NavContenido({
+  sinLeer = 0,
+  mensajesSinLeer = 0,
+  onNavegar,
+}: Props & { onNavegar?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -43,7 +58,12 @@ export default function AdminNav({
   }
 
   return (
-    <aside className="w-[220px] bg-nav text-muted-foreground flex flex-col min-h-screen shrink-0">
+    <div
+      className="flex min-h-full flex-1 flex-col"
+      onClick={(evento) => {
+        if (onNavegar && (evento.target as HTMLElement).closest("a,button")) onNavegar();
+      }}
+    >
       <div className="px-5 pt-6 pb-5 border-b border-nav-sub">
         <div className="flex items-center gap-2 mb-1">
           <Shield className="w-4 h-4 text-primary" />
@@ -87,6 +107,61 @@ export default function AdminNav({
           Cerrar sesión
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Barra lateral fija. Sólo desde `lg`: abajo el ancho no alcanza. */
+export default function AdminNav(props: Props) {
+  return (
+    <aside className="hidden w-[220px] shrink-0 flex-col bg-nav text-muted-foreground lg:flex">
+      <NavContenido {...props} />
     </aside>
+  );
+}
+
+/**
+ * Cabecera de móvil con el menú en un cajón.
+ *
+ * El panel admin tiene tablas anchas; con la barra lateral fija ocupando 220px
+ * no quedaba ancho utilizable en un teléfono.
+ */
+export function AdminNavMovil(props: Props) {
+  const [abierto, setAbierto] = useState(false);
+  const pendientes = (props.sinLeer ?? 0) + (props.mensajesSinLeer ?? 0);
+
+  return (
+    <header className="sticky top-0 z-30 flex items-center gap-3 bg-nav px-3 py-2.5 lg:hidden">
+      <Sheet open={abierto} onOpenChange={setAbierto}>
+        <SheetTrigger asChild>
+          <button
+            className="flex size-11 shrink-0 items-center justify-center rounded-md text-white"
+            aria-label="Abrir menú"
+          >
+            <Menu className="size-6" aria-hidden="true" />
+          </button>
+        </SheetTrigger>
+
+        <SheetContent
+          side="left"
+          className="w-[260px] overflow-y-auto border-nav-sub bg-nav p-0 text-muted-foreground"
+        >
+          <SheetTitle className="sr-only">Menú de administración</SheetTitle>
+          <NavContenido {...props} onNavegar={() => setAbierto(false)} />
+        </SheetContent>
+      </Sheet>
+
+      <p className="flex min-w-0 items-center gap-1.5">
+        <Shield className="size-4 shrink-0 text-primary" aria-hidden="true" />
+        <span className="text-base font-bold text-white">CataloGo</span>
+        <span className="text-base font-bold text-primary">Admin</span>
+      </p>
+
+      {pendientes > 0 && (
+        <span className="ml-auto flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-2xs font-bold text-primary-foreground">
+          {pendientes > 99 ? "99+" : pendientes}
+        </span>
+      )}
+    </header>
   );
 }

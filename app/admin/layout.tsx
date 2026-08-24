@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import AdminNav from "@/components/admin/AdminNav";
+import AdminNav, { AdminNavMovil } from "@/components/admin/AdminNav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -32,10 +32,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       .is("leido_at", null),
   ]);
 
+  const navProps = { sinLeer: count ?? 0, mensajesSinLeer: mensajes ?? 0 };
+
   return (
-    <div className="min-h-screen bg-muted flex">
-      <AdminNav sinLeer={count ?? 0} mensajesSinLeer={mensajes ?? 0} />
-      <main className="flex-1 p-8 overflow-auto">{children}</main>
+    <div className="min-h-screen bg-muted lg:flex">
+      <AdminNav {...navProps} />
+
+      {/* min-w-0 es necesario: sin él las tablas anchas estiran el flex y
+          aparece scroll horizontal en toda la página en vez de sólo en ellas. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AdminNavMovil {...navProps} />
+        <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
     </div>
   );
 }
