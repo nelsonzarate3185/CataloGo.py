@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Hilo from "@/components/mensajes/Hilo";
 import type { Mensaje } from "@/types/database";
 
@@ -13,7 +13,13 @@ interface Props {
 
 export default async function HiloAdminPage({ params }: Props) {
   const { comercioId } = await params;
-  const supabase = await createClient();
+
+  // Cliente admin, como el resto del panel. La policy de lectura pública de
+  // comercios es `to anon` para no exponer user_id ni plan a un comerciante
+  // logueado, así que el superadmin —que es `authenticated`— no puede leer con
+  // su sesión el comercio de otro: RLS le filtra la fila y la página caía en
+  // notFound(). El layout ya verificó que quien mira es superadmin.
+  const supabase = createAdminClient();
 
   const { data: comercio } = await supabase
     .from("comercios")
