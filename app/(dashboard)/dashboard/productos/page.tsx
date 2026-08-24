@@ -45,8 +45,8 @@ export default async function ProductosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground">Productos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {productos.length} producto{productos.length !== 1 ? "s" : ""}

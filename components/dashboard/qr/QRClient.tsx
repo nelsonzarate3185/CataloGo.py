@@ -40,7 +40,7 @@ export default function QRClient({ url, comercioNombre }: Props) {
 
   return (
     <div className="max-w-md">
-      <div className="bg-card rounded-2xl border p-8 flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center gap-6 rounded-2xl border bg-card p-5 sm:p-8">
         {qrDataUrl ? (
           <div className="border-4 border-nav rounded-xl overflow-hidden">
             <Image src={qrDataUrl} alt="QR" width={256} height={256} />

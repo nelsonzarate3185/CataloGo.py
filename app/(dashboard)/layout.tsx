@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardNav from "@/components/dashboard/DashboardNav";
+import DashboardNav, { DashboardNavMovil } from "@/components/dashboard/DashboardNav";
 
 export default async function DashboardLayout({
   children,
@@ -31,16 +31,24 @@ export default async function DashboardLayout({
     .eq("autor", "admin")
     .is("leido_at", null);
 
+  const navProps = {
+    comercioNombre: comercio.nombre,
+    comercioSlug: comercio.slug,
+    comercioPlan: comercio.plan,
+    isSuperAdmin,
+    mensajesSinLeer: mensajesSinLeer ?? 0,
+  };
+
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardNav
-        comercioNombre={comercio.nombre}
-        comercioSlug={comercio.slug}
-        comercioPlan={comercio.plan}
-        isSuperAdmin={isSuperAdmin}
-        mensajesSinLeer={mensajesSinLeer ?? 0}
-      />
-      <main className="flex-1 p-7 overflow-auto">{children}</main>
+    <div className="min-h-screen bg-background lg:flex">
+      <DashboardNav {...navProps} />
+
+      {/* min-w-0 es necesario: sin él, un hijo ancho (una tabla, un nombre
+          largo) estira el flex y aparece scroll horizontal en toda la página. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <DashboardNavMovil {...navProps} />
+        <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-7">{children}</main>
+      </div>
     </div>
   );
 }

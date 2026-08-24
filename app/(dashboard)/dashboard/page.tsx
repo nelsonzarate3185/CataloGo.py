@@ -135,9 +135,9 @@ export default async function DashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-heading text-[24px] font-extrabold text-foreground">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-heading text-xl font-extrabold text-foreground sm:text-2xl">
             Buen día, {comercio.nombre} 👋
           </h1>
           <p className="text-[14px] text-muted-foreground mt-1 capitalize">
@@ -245,7 +245,7 @@ export default async function DashboardPage() {
             <div className="mt-4 pt-4 border-t border-sage-200">
               <p className="text-[12px] text-muted-foreground mb-1.5">Link de tu tienda</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 bg-sage-50 border border-sage-300 rounded-lg px-3 py-2 text-[12px] text-muted-foreground truncate">
+                <code className="min-w-0 flex-1 truncate rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
                   {catalogoUrl}
                 </code>
                 <CopyLinkButton url={catalogoUrl} />

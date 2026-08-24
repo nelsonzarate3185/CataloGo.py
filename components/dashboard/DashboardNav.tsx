@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -16,9 +17,16 @@ import {
   Plus,
   MapPin,
   Shield,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import type { PlanTipo } from "@/types/database";
 
 const navItems = [
@@ -44,13 +52,19 @@ interface Props {
 const claseItem =
   "flex items-center gap-3 rounded-md px-3 py-2.5 text-base font-semibold transition-colors";
 
-export default function DashboardNav({
+/**
+ * Contenido del menú, compartido por la barra lateral de escritorio y el cajón
+ * de móvil. Duplicarlo habría hecho que las dos versiones se desincronizaran en
+ * cuanto se agregara una sección.
+ */
+function NavContenido({
   comercioNombre,
   comercioSlug,
   comercioPlan,
   isSuperAdmin,
   mensajesSinLeer = 0,
-}: Props) {
+  onNavegar,
+}: Props & { onNavegar?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -65,7 +79,14 @@ export default function DashboardNav({
   }
 
   return (
-    <aside className="flex min-h-screen w-[230px] shrink-0 flex-col bg-nav text-nav-foreground/80">
+    <div
+      className="flex min-h-full flex-1 flex-col"
+      // Al elegir una sección hay que cerrar el cajón; en escritorio no hay
+      // cajón que cerrar y onNavegar no se pasa.
+      onClick={(evento) => {
+        if (onNavegar && (evento.target as HTMLElement).closest("a,button")) onNavegar();
+      }}
+    >
       <div className="px-5 pb-5 pt-6">
         <p className="flex items-baseline gap-px">
           <span className="font-heading text-lg font-bold text-white">Catalo</span>
@@ -164,6 +185,60 @@ export default function DashboardNav({
           Publicar producto
         </Link>
       </div>
+    </div>
+  );
+}
+
+/** Barra lateral fija. Sólo desde `lg`: abajo el ancho no alcanza. */
+export default function DashboardNav(props: Props) {
+  return (
+    <aside className="hidden w-[230px] shrink-0 flex-col bg-nav text-nav-foreground/80 lg:flex">
+      <NavContenido {...props} />
     </aside>
+  );
+}
+
+/**
+ * Cabecera de móvil con el menú en un cajón.
+ *
+ * Antes la barra lateral de 230px se mostraba siempre: en un teléfono de 375px
+ * dejaba 145px para el contenido, que es inusable.
+ */
+export function DashboardNavMovil(props: Props) {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-30 flex items-center gap-3 bg-nav px-3 py-2.5 lg:hidden">
+      <Sheet open={abierto} onOpenChange={setAbierto}>
+        <SheetTrigger asChild>
+          <button
+            className="flex size-11 shrink-0 items-center justify-center rounded-md text-white"
+            aria-label="Abrir menú"
+          >
+            <Menu className="size-6" aria-hidden="true" />
+          </button>
+        </SheetTrigger>
+
+        <SheetContent
+          side="left"
+          className="w-[270px] overflow-y-auto border-nav-sub bg-nav p-0 text-nav-foreground/80"
+        >
+          <SheetTitle className="sr-only">Menú del panel</SheetTitle>
+          <NavContenido {...props} onNavegar={() => setAbierto(false)} />
+        </SheetContent>
+      </Sheet>
+
+      <p className="flex min-w-0 items-baseline gap-px">
+        <span className="font-heading text-base font-bold text-white">Catalo</span>
+        <span className="font-heading text-base font-bold text-primary">Go</span>
+        <span className="ml-2 truncate text-xs text-white/60">{props.comercioNombre}</span>
+      </p>
+
+      {(props.mensajesSinLeer ?? 0) > 0 && (
+        <span className="ml-auto flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-2xs font-bold text-primary-foreground">
+          {props.mensajesSinLeer}
+        </span>
+      )}
+    </header>
   );
 }
