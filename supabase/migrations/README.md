@@ -44,8 +44,8 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 | `20260821140000_comercios_columnas_anon_v2.sql` | ✅ |
 | `20260821160000_mensajes.sql` | ✅ |
 | `20260821180000_pagos.sql` | ✅ |
-| `20260825120000_pagos_fecha.sql` | ⬜ pendiente — sin esto el histórico falla |
 | `20260825100000_comercio_publico_rpc.sql` | ✅ |
+| `20260825120000_pagos_fecha.sql` | ✅ |
 
 Marcar la casilla al aplicarla.
 
