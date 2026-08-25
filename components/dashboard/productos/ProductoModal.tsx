@@ -239,7 +239,13 @@ export default function ProductoModal({
           .select()
           .single();
 
-        if (error || !created) { toast.error("Error al crear el producto"); return; }
+        // Se muestra el mensaje de la base y no uno genérico: el cupo de
+        // cambios del plan explica ahí cuántos quedan y desde cuándo, y sin eso
+        // el comerciante sólo ve que "falló" sin saber qué hacer.
+        if (error || !created) {
+          toast.error(error?.message ?? "No pudimos crear el producto.");
+          return;
+        }
 
         const imagen_url = imagenPrincipalFile
           ? await uploadImagen(created.id, imagenPrincipalFile, "")
@@ -272,7 +278,10 @@ export default function ProductoModal({
           .select()
           .single();
 
-        if (error || !updated) { toast.error("Error al actualizar el producto"); return; }
+        if (error || !updated) {
+          toast.error(error?.message ?? "No pudimos actualizar el producto.");
+          return;
+        }
         toast.success("Producto actualizado");
         onSaved(updated, false);
       }

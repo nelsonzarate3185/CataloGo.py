@@ -100,7 +100,9 @@ export default function ProductosClient({
       .update({ disponible: nuevoEstado })
       .eq("id", producto.id);
 
-    if (error) { toast.error("Error al actualizar"); return; }
+    // Publicar un producto puede consumir cupo de cambios del plan; el motivo
+    // viene en el mensaje de la base.
+    if (error) { toast.error(error.message); return; }
 
     setProductos((prev) =>
       prev.map((p) => (p.id === producto.id ? { ...p, disponible: nuevoEstado } : p))
@@ -111,7 +113,7 @@ export default function ProductosClient({
   async function eliminar(id: string) {
     if (!confirm("¿Eliminar este producto?")) return;
     const { error } = await supabase.from("productos").delete().eq("id", id);
-    if (error) { toast.error("Error al eliminar"); return; }
+    if (error) { toast.error(`No pudimos eliminar: ${error.message}`); return; }
     setProductos((prev) => prev.filter((p) => p.id !== id));
     toast.success("Producto eliminado");
   }

@@ -90,3 +90,66 @@ function iso(fecha: Date): string {
 export function precioMensual(plan: PlanTipo): number {
   return PRECIOS_PLAN[plan] ?? 0;
 }
+
+/** Cambios que el plan permite por período. Sólo el gratuito tiene tope. */
+export const CAMBIOS_POR_PERIODO: Partial<Record<PlanTipo, number>> = {
+  basico: 3,
+};
+
+/** Publicaciones iniciales que no consumen cupo. */
+export const CARGA_INICIAL = 5;
+
+/** Meses que dura un período de cambios. */
+export const MESES_PERIODO = 3;
+
+export interface EstadoCambios {
+  /** Cuántos le quedan en el período. */
+  restantes: number;
+  limite: number;
+  /** Cuándo se reinicia el contador. NULL si todavía no gastó ninguno. */
+  seReinicia: Date | null;
+  /** Si todavía está usando la carga inicial, que no consume cupo. */
+  enCargaInicial: boolean;
+}
+
+/**
+ * Estado del cupo de cambios de un comercio, o null si su plan no tiene tope.
+ *
+ * Replica la lógica del trigger `consumir_cambio_publicacion` para poder
+ * mostrarla antes de que el comerciante choque contra ella. La base sigue
+ * siendo la autoridad: esto informa, no autoriza.
+ */
+export function estadoCambios(
+  plan: PlanTipo,
+  cambiosUsados: number,
+  periodoInicio: string | null,
+  publicacionesTotales: number,
+  hoy: Date
+): EstadoCambios | null {
+  const limite = CAMBIOS_POR_PERIODO[plan];
+  if (limite === undefined) return null;
+
+  // El período vencido se considera ya reiniciado, igual que hace el trigger
+  // en la siguiente publicación.
+  let usados = cambiosUsados;
+  let inicio: Date | null = periodoInicio ? new Date(periodoInicio) : null;
+
+  if (inicio) {
+    const vence = new Date(inicio);
+    vence.setUTCMonth(vence.getUTCMonth() + MESES_PERIODO);
+    if (vence <= hoy) {
+      usados = 0;
+      inicio = null;
+    }
+  }
+
+  const seReinicia = inicio ? new Date(inicio) : null;
+  if (seReinicia) seReinicia.setUTCMonth(seReinicia.getUTCMonth() + MESES_PERIODO);
+
+  return {
+    restantes: Math.max(0, limite - usados),
+    limite,
+    seReinicia,
+    enCargaInicial: publicacionesTotales < CARGA_INICIAL,
+  };
+}

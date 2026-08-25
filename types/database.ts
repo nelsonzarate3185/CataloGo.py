@@ -38,6 +38,12 @@ export type Database = {
           activo: boolean;
           /** Si es true, las reseñas nuevas quedan pendientes de aprobación. */
           resenas_moderadas: boolean;
+          /** Cambios consumidos en el período vigente. Sólo aplica al plan básico. */
+          cambios_usados: number;
+          /** Inicio del período de 3 meses. NULL si todavía no gastó ninguno. */
+          cambios_periodo_inicio: string | null;
+          /** Veces que un producto pasó a publicado. Las primeras 5 no consumen cupo. */
+          publicaciones_totales: number;
           created_at: string;
           updated_at: string;
         };
@@ -57,6 +63,9 @@ export type Database = {
           plan_expira_at?: string | null;
           activo?: boolean;
           resenas_moderadas?: boolean;
+          cambios_usados?: number;
+          cambios_periodo_inicio?: string | null;
+          publicaciones_totales?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -76,6 +85,9 @@ export type Database = {
           plan_expira_at?: string | null;
           activo?: boolean;
           resenas_moderadas?: boolean;
+          cambios_usados?: number;
+          cambios_periodo_inicio?: string | null;
+          publicaciones_totales?: number;
           created_at?: string;
           updated_at?: string;
         };

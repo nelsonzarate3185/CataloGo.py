@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { PLAN_LIMITES } from "@/types/database";
+import { estadoCambios, CARGA_INICIAL } from "@/lib/cobros";
 import ProductosClient from "@/components/dashboard/productos/ProductosClient";
 
 export default async function ProductosPage() {
@@ -13,7 +14,7 @@ export default async function ProductosPage() {
 
   const { data: comercio } = await supabase
     .from("comercios")
-    .select("id, plan")
+    .select("id, plan, cambios_usados, cambios_periodo_inicio, publicaciones_totales")
     .eq("user_id", user.id)
     .single();
   if (!comercio) redirect("/registro");
@@ -39,6 +40,15 @@ export default async function ProductosPage() {
   const catalogos = catalogosRes.data ?? [];
   const categorias = categoriasRes.data ?? [];
   const limite = PLAN_LIMITES[comercio.plan].productos;
+
+  // Sólo el plan gratuito tiene cupo; para el resto esto es null y no se muestra.
+  const cambios = estadoCambios(
+    comercio.plan,
+    comercio.cambios_usados,
+    comercio.cambios_periodo_inicio,
+    comercio.publicaciones_totales,
+    new Date()
+  );
   const limiteImagenes = PLAN_LIMITES[comercio.plan].imagenes;
   const totalActivos = productos.filter((p) => p.disponible).length;
   const limiteAlcanzado = limite < Number.MAX_SAFE_INTEGER && totalActivos >= limite;
@@ -52,6 +62,34 @@ export default async function ProductosPage() {
             {productos.length} producto{productos.length !== 1 ? "s" : ""}
             {limite < Number.MAX_SAFE_INTEGER && ` · ${totalActivos}/${limite} activos`}
           </p>
+
+          {cambios && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {cambios.enCargaInicial ? (
+                <>
+                  Tus primeras {CARGA_INICIAL} publicaciones no consumen cambios.
+                </>
+              ) : cambios.restantes > 0 ? (
+                <>
+                  Te{" "}
+                  <strong className="text-foreground">
+                    {cambios.restantes === 1
+                      ? "queda 1 cambio"
+                      : `quedan ${cambios.restantes} cambios`}
+                  </strong>{" "}
+                  de {cambios.limite}
+                  {cambios.seReinicia &&
+                    ` · se renuevan el ${cambios.seReinicia.toLocaleDateString("es-PY")}`}
+                </>
+              ) : (
+                <span className="text-deal">
+                  Usaste tus {cambios.limite} cambios
+                  {cambios.seReinicia &&
+                    ` · se renuevan el ${cambios.seReinicia.toLocaleDateString("es-PY")}`}
+                </span>
+              )}
+            </p>
+          )}
         </div>
       </div>
 
