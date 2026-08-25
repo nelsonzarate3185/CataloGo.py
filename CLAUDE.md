@@ -25,8 +25,8 @@ Permite crear catálogos digitales de productos con pedidos vía WhatsApp, pensa
 | Componentes | shadcn/ui |
 | Auth | Supabase Auth (Google OAuth) |
 | Base de datos | Supabase (PostgreSQL) |
-| Imágenes | Cloudinary |
-| Pagos | MercadoPago Paraguay |
+| Imágenes | Supabase Storage (buckets `productos` y `logos`) |
+| Pagos | Manuales, registrados por el superadmin |
 | Deploy | Vercel |
 | ORM / Queries | Supabase JS Client (sin Prisma) |
 
@@ -130,10 +130,12 @@ if (error) throw new Error(`Error fetching products: ${error.message}`)
 - Paleta de colores definida en `tailwind.config.ts` — no hardcodear colores hex
 - Clases de Tailwind en orden: layout → spacing → typography → colors → effects
 
-### Cloudinary
-- Todas las imágenes van a la carpeta del tenant: `catalogo/{business_slug}/`
-- Transformaciones en la URL (no en el servidor): `f_auto,q_auto,w_800`
-- Guardar solo el `public_id` en la BD, nunca la URL completa
+### Imágenes (Supabase Storage)
+- Productos en el bucket `productos`, ruta `{comercio_id}/{producto_id}.ext`
+- Logos en el bucket `logos`, ruta `{comercio_id}/logo.ext`
+- **Siempre** pasar por `reducirImagen()` de `lib/imagenes.ts` antes de subir:
+  reduce a 1200px (400px los logos) y convierte a WebP en el navegador. Sin
+  eso se suben fotos de varios MB que el comprador después descarga.
 
 ---
 
@@ -148,7 +150,7 @@ Dashboard habilitado
 
 ### 2. Gestión de catálogo
 ```
-Owner crea categoría → Agrega productos (con imagen Cloudinary) → 
+Owner crea categoría → Agrega productos (imagen a Supabase Storage) → 
 Define precio en PYG → Activa/desactiva productos → 
 Catálogo público disponible en /{slug}
 ```
@@ -160,11 +162,14 @@ Genera mensaje de WhatsApp pre-armado → Envía al número del negocio →
 Owner gestiona pedido manualmente (o via panel)
 ```
 
-### 4. Flujo de pago (MercadoPago)
+### 4. Flujo de cobro (manual)
 ```
-Plan seleccionado → MP Checkout → Webhook confirma pago → 
-plan_request se aprueba automáticamente → Plan activado
+Comerciante solicita plan → plan_request (pending) → superadmin aprueba →
+plan activo → el comerciante transfiere → el superadmin registra el pago en
+/admin/cobros → un trigger actualiza comercios.plan_expira_at
 ```
+No hay pasarela de pago. MercadoPago se removió en `c736ff2` y su webhook se
+eliminó por ser código muerto con privilegios de service role.
 
 ---
 
@@ -176,18 +181,11 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=       # Solo en server-side
 
-# Cloudinary
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
+# App — obligatoria: fija el dominio de los QR y de los correos de recuperación
+NEXT_PUBLIC_APP_URL=https://catalogo-orcin-nu.vercel.app
 
-# MercadoPago Paraguay
-MP_ACCESS_TOKEN=
-MP_PUBLIC_KEY=
-NEXT_PUBLIC_MP_PUBLIC_KEY=
-
-# App
-NEXT_PUBLIC_APP_URL=https://catalogopy.com
+# Opcional: sal para hashear IPs en el rate limit de reseñas
+RESENAS_IP_SALT=
 ```
 
 **Regla:** Nunca exponer variables sin `NEXT_PUBLIC_` en el cliente.
@@ -213,10 +211,15 @@ NEXT_PUBLIC_APP_URL=https://catalogopy.com
 5. Actualizar tipos en `/types/`
 
 ### Agregar campo a una tabla existente
-1. Escribir la migration SQL
+1. Escribir la migration SQL en `supabase/migrations/`, idempotente
 2. Actualizar el tipo TypeScript correspondiente
 3. Actualizar RLS policies si aplica
 4. Actualizar los queries afectados
+5. **Si la columna es de `comercios` y la necesita el catálogo público:**
+   agregar `grant select (columna) on public.comercios to anon;` en la misma
+   migración, y sumarla a la función `comercio_publico`. El permiso de `anon`
+   enumera columnas: una nueva no se hereda, y el catálogo falla con un error
+   que no dice qué columna falta.
 
 ### Nuevo componente UI
 1. Verificar si existe variante en shadcn/ui primero
@@ -229,13 +232,19 @@ NEXT_PUBLIC_APP_URL=https://catalogopy.com
 ## 🚫 Lo que NO hacer
 
 - No usar `useEffect` para data fetching — usar Server Components
-- No guardar URLs completas de Cloudinary en BD — solo `public_id`
+- No subir imágenes sin pasarlas por `reducirImagen()` — se suben de varios MB
 - No mezclar lógica de roles `superadmin` y `owner` en el mismo componente
 - No hardcodear el número de WhatsApp — leer de `businesses.whatsapp_number`
 - No hacer queries sin filtrar por `business_id` en tablas de tenant
 - No exponer `SUPABASE_SERVICE_ROLE_KEY` en cliente
 - No crear migraciones destructivas sin backup
 - No usar `console.log` en producción — usar logger o eliminar
+- No confiar en validaciones sólo del cliente para reglas de negocio: los
+  límites de plan se aplican con un trigger en la base, porque el cliente es
+  evitable desde la consola del navegador
+- No leer `comercios` con el cliente de sesión desde vistas públicas: su
+  política de lectura pública es `to anon`, así que un usuario autenticado que
+  no sea el dueño no ve la fila. Usar la función `comercio_publico(slug)`
 
 ---
 
@@ -244,7 +253,7 @@ NEXT_PUBLIC_APP_URL=https://catalogopy.com
 - Moneda: PYG (Guaraní) — precios siempre en PYG, sin decimales
 - WhatsApp es el canal de ventas dominante para PyMEs paraguayas
 - Conectividad mobile-first — optimizar para 4G, no asumir fibra
-- MercadoPago es el gateway más usado localmente
+- MercadoPago es el gateway más usado localmente, pero CataloGo hoy cobra a mano (ver flujo de cobro)
 - Usuarios no técnicos: UX debe ser extremadamente simple
 
 ---

@@ -41,6 +41,16 @@ export default function CarritoContenido({ slug, catalogoId, comercio }: Props) 
 
   async function enviarPedido() {
     if (items.length === 0) return;
+
+    // Se comprueba antes de intentar: sin conexión, el insert queda colgado
+    // hasta agotar el tiempo de espera y el comprador no entiende qué pasa.
+    // `navigator.onLine` sólo detecta la falta de red local, no un corte más
+    // arriba, así que igual hace falta el manejo de error de abajo.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setError("Parece que no tenés conexión. Revisá tus datos o el WiFi y probá de nuevo.");
+      return;
+    }
+
     setEnviando(true);
     setError(null);
 
