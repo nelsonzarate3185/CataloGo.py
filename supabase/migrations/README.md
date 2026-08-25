@@ -45,6 +45,7 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 | `20260821160000_mensajes.sql` | ✅ |
 | `20260821180000_pagos.sql` | ✅ |
 | `20260825100000_comercio_publico_rpc.sql` | ✅ |
+| `20260825180000_catalogo_paginado.sql` | ⬜ pendiente — sin esto el catálogo falla |
 | `20260825160000_users_y_downgrade.sql` | ⬜ pendiente — alta en users y baja de plan |
 | `20260825140000_seguridad_p1.sql` | ⬜ pendiente — límites de plan y cierre de plan_requests |
 | `20260825120000_pagos_fecha.sql` | ✅ |

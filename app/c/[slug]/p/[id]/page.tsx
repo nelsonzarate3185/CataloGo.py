@@ -3,7 +3,12 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getCatalogoPorSlug, getResenasProducto } from "@/lib/catalogo";
+import {
+  getCatalogoPorSlug,
+  getProducto,
+  getRelacionados,
+  getResenasProducto,
+} from "@/lib/catalogo";
 import { porcentajeDescuento, sePuedeComprar } from "@/lib/productos";
 import GaleriaProducto from "@/components/catalogo/GaleriaProducto";
 import BotonAgregar from "@/components/catalogo/BotonAgregar";
@@ -44,7 +49,7 @@ function imagenesDe(producto: Producto): string[] {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, id } = await params;
   const catalogo = await getCatalogoPorSlug(slug);
-  const producto = catalogo?.productos.find((p) => p.id === id);
+  const producto = catalogo ? await getProducto(catalogo.id, id) : null;
 
   if (!catalogo || !producto) return { title: "Producto no encontrado" };
 
@@ -73,8 +78,9 @@ export default async function ProductoPage({ params }: Props) {
 
   if (!catalogo) notFound();
 
-  const producto = catalogo.productos.find((p) => p.id === id);
-  if (!producto || !producto.disponible) notFound();
+  // getProducto ya filtra por disponible.
+  const producto = await getProducto(catalogo.id, id);
+  if (!producto) notFound();
 
   const categoria = catalogo.categorias.find((c) => c.id === producto.categoria_id);
   const imagenes = imagenesDe(producto);
@@ -83,14 +89,7 @@ export default async function ProductoPage({ params }: Props) {
 
   const resenas = await getResenasProducto(producto.id);
 
-  const relacionados = catalogo.productos
-    .filter(
-      (p) =>
-        p.id !== producto.id &&
-        p.disponible &&
-        (categoria ? p.categoria_id === producto.categoria_id : true)
-    )
-    .slice(0, 5);
+  const relacionados = await getRelacionados(catalogo.id, producto);
 
   return (
     <main className="mx-auto max-w-7xl px-3 py-4 sm:px-5">

@@ -1,4 +1,4 @@
-import type { Catalogo, Categoria, Producto, Comercio } from "./database";
+import type { Catalogo, Categoria, Comercio } from "./database";
 
 export interface CatalogoConRelaciones extends Catalogo {
   /**
@@ -17,7 +17,6 @@ export interface CatalogoConRelaciones extends Catalogo {
     | "maps_url"
   >;
   categorias: Categoria[];
-  productos: Producto[];
 }
 
 export interface PedidoItem {

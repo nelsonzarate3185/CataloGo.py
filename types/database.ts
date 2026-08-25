@@ -540,6 +540,16 @@ export type Database = {
        * Es `security definer`: el catálogo lo abre cualquiera, con sesión o
        * sin ella, y la política de la tabla sólo alcanza a `anon`.
        */
+      /** Marcas, rango de precios y si hay ofertas, para los filtros del catálogo. */
+      catalogo_facetas: {
+        Args: { p_catalogo_id: string };
+        Returns: {
+          marcas: string[];
+          precio_min: number;
+          precio_max: number;
+          hay_ofertas: boolean;
+        }[];
+      };
       comercio_publico: {
         Args: { p_slug: string };
         Returns: {

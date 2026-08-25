@@ -3,16 +3,15 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getCatalogoPorSlug } from "@/lib/catalogo";
 import {
-  filtrarProductos,
-  marcasDisponibles,
-  rangoPrecios,
-  porcentajeDescuento,
-  construirUrl,
-  esOrdenValido,
-  ORDENES,
-} from "@/lib/productos";
+  getCatalogoPorSlug,
+  getProductosPagina,
+  getFacetas,
+  ordenDesdeUrl,
+  POR_PAGINA,
+} from "@/lib/catalogo";
+import { construirUrl, ORDENES } from "@/lib/productos";
+import Paginacion from "@/components/catalogo/Paginacion";
 import ProductoCard from "@/components/catalogo/ProductoCard";
 import FiltrosPanel from "@/components/catalogo/FiltrosPanel";
 import FiltrosMobile from "@/components/catalogo/FiltrosMobile";
@@ -80,29 +79,35 @@ export default async function CatalogoPage({ params, searchParams }: Props) {
     max: unico(sp.max),
     ofertas: unico(sp.ofertas),
     orden: unico(sp.orden),
+    pagina: unico(sp.pagina),
   };
 
-  const ordenSolicitado = parametros.orden;
-  const orden = esOrdenValido(ordenSolicitado) ? ordenSolicitado : undefined;
+  const orden = ordenDesdeUrl(parametros.orden);
 
   const categorias = [...catalogo.categorias]
     .filter((c) => c.activo)
     .sort((a, b) => a.orden - b.orden);
-  const disponibles = catalogo.productos.filter((p) => p.disponible);
 
-  const productos = filtrarProductos(catalogo.productos, {
-    q: parametros.q,
-    categoria: parametros.categoria,
-    marca: parametros.marca,
-    precioMin: aEntero(parametros.min),
-    precioMax: aEntero(parametros.max),
-    soloOfertas: Boolean(parametros.ofertas),
-    orden,
-  });
+  // Los productos y las facetas se piden en paralelo: no dependen entre sí y
+  // así la página no espera dos viajes seguidos a la base.
+  const [pagina, facetas] = await Promise.all([
+    getProductosPagina(
+      catalogo.id,
+      {
+        q: parametros.q,
+        categoria: parametros.categoria,
+        marca: parametros.marca,
+        precioMin: aEntero(parametros.min),
+        precioMax: aEntero(parametros.max),
+        soloOfertas: Boolean(parametros.ofertas),
+        orden,
+      },
+      aEntero(parametros.pagina) ?? 1
+    ),
+    getFacetas(catalogo.id),
+  ]);
 
-  const marcas = marcasDisponibles(disponibles);
-  const rango = rangoPrecios(disponibles);
-  const hayOfertas = disponibles.some((p) => porcentajeDescuento(p) > 0);
+  const productos = pagina.productos;
 
   const categoriaActiva = categorias.find((c) => c.id === parametros.categoria);
   const chips = construirChips({ slug, parametros, categoriaActiva: categoriaActiva?.nombre });
@@ -112,9 +117,9 @@ export default async function CatalogoPage({ params, searchParams }: Props) {
       slug={slug}
       parametros={parametros}
       categorias={categorias}
-      marcas={marcas}
-      rango={rango}
-      hayOfertas={hayOfertas}
+      marcas={facetas.marcas}
+      rango={facetas.rango}
+      hayOfertas={facetas.hayOfertas}
     />
   );
 
@@ -132,8 +137,13 @@ export default async function CatalogoPage({ params, searchParams }: Props) {
                   : categoriaActiva?.nombre ?? "Todos los productos"}
               </h1>
               <p className="text-xs text-muted-foreground">
-                {productos.length}{" "}
-                {productos.length === 1 ? "resultado" : "resultados"}
+                {pagina.total === 0
+                  ? "Sin resultados"
+                  : pagina.paginas > 1
+                    ? `${(pagina.pagina - 1) * POR_PAGINA + 1}–${
+                        (pagina.pagina - 1) * POR_PAGINA + productos.length
+                      } de ${pagina.total}`
+                    : `${pagina.total} ${pagina.total === 1 ? "resultado" : "resultados"}`}
                 {orden && orden !== "relevancia" && ` · ${ORDENES[orden]}`}
               </p>
             </div>
@@ -183,6 +193,15 @@ export default async function CatalogoPage({ params, searchParams }: Props) {
                 <ProductoCard key={producto.id} slug={slug} producto={producto} />
               ))}
             </div>
+          )}
+
+          {pagina.paginas > 1 && (
+            <Paginacion
+              slug={slug}
+              parametros={parametros}
+              pagina={pagina.pagina}
+              paginas={pagina.paginas}
+            />
           )}
         </div>
       </div>
