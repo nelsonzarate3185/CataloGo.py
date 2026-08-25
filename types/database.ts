@@ -219,6 +219,8 @@ export type Database = {
           periodo_desde: string;
           /** Fecha de vencimiento del período pagado. */
           periodo_hasta: string;
+          /** Fecha en que entró el dinero. Distinta de created_at. */
+          fecha_pago: string;
           metodo: string | null;
           nota: string | null;
           registrado_por: string | null;
@@ -231,6 +233,7 @@ export type Database = {
           plan: string;
           periodo_desde: string;
           periodo_hasta: string;
+          fecha_pago?: string;
           metodo?: string | null;
           nota?: string | null;
           registrado_por?: string | null;
@@ -243,6 +246,7 @@ export type Database = {
           plan?: string;
           periodo_desde?: string;
           periodo_hasta?: string;
+          fecha_pago?: string;
           metodo?: string | null;
           nota?: string | null;
           registrado_por?: string | null;

@@ -1,5 +1,8 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { History } from "lucide-react";
+
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import CobrosClient, { type FilaCobro } from "@/components/admin/CobrosClient";
@@ -43,12 +46,22 @@ export default async function CobrosPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Cobros</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Suscripciones mensuales, vencimientos y atrasos. Los planes básicos son
-          gratuitos y no se cobran.
-        </p>
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground">Cobros</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Suscripciones mensuales, vencimientos y atrasos. Los planes básicos
+            son gratuitos y no se cobran.
+          </p>
+        </div>
+
+        <Link
+          href="/admin/cobros/historico"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted"
+        >
+          <History className="size-4" aria-hidden="true" />
+          Histórico
+        </Link>
       </div>
 
       <CobrosClient

@@ -265,6 +265,9 @@ function ModalPago({
   const [monto, setMonto] = useState(String(precioMensual(comercio.plan)));
   const [desde, setDesde] = useState(sugerido.desde);
   const [hasta, setHasta] = useState(sugerido.hasta);
+  // Por defecto hoy, pero editable: muchas veces el pago se registra días
+  // después de recibirlo, y el reporte de ingresos se agrupa por esta fecha.
+  const [fechaPago, setFechaPago] = useState(new Date().toISOString().slice(0, 10));
   const [metodo, setMetodo] = useState("Transferencia");
   const [nota, setNota] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -289,6 +292,7 @@ function ModalPago({
       plan: comercio.plan,
       periodo_desde: desde,
       periodo_hasta: hasta,
+      fecha_pago: fechaPago,
       metodo: metodo.trim() || null,
       nota: nota.trim() || null,
       registrado_por: registradoPor,
@@ -359,6 +363,21 @@ function ModalPago({
               ? "Tenía saldo a favor: el período nuevo arranca cuando termina el anterior."
               : "El período arranca hoy porque no hay vencimiento vigente."}
           </p>
+
+          <div>
+            <Label htmlFor="pago-fecha">Fecha del pago</Label>
+            <Input
+              id="pago-fecha"
+              type="date"
+              value={fechaPago}
+              onChange={(e) => setFechaPago(e.target.value)}
+              className="mt-1"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Cuándo entró el dinero, no cuándo lo cargás. Define en qué mes
+              cuenta el ingreso.
+            </p>
+          </div>
 
           <div>
             <Label htmlFor="pago-metodo">Método</Label>
