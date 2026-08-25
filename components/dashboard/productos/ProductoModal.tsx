@@ -9,6 +9,7 @@ import { Upload, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { formatGS } from "@/lib/utils";
+import { reducirImagen, formatearPeso, LADO_PRODUCTO } from "@/lib/imagenes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,6 +71,20 @@ interface Props {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+/**
+ * Avisa cuánto se achicó la foto.
+ *
+ * No es adorno: sin esta señal el comerciante no entiende por qué la subida
+ * ahora tarda menos, y ante una foto que se ve distinta sospecharía del
+ * sistema.
+ */
+function avisarReduccion(original: File, reducida: File) {
+  if (reducida === original || reducida.size >= original.size) return;
+  toast.success(
+    `Foto optimizada: ${formatearPeso(original.size)} → ${formatearPeso(reducida.size)}`
+  );
+}
 
 function parseImagenesAdicionales(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
@@ -136,22 +151,29 @@ export default function ProductoModal({
   const descuento =
     precioAnterior > precio ? Math.round(((precioAnterior - precio) / precioAnterior) * 100) : 0;
 
-  function handlePrincipalChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePrincipalChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!ALLOWED_TYPES.includes(file.type)) { toast.error("Solo JPG, PNG o WEBP"); return; }
     if (file.size > MAX_FILE_SIZE) { toast.error("Máximo 10MB por imagen"); return; }
-    setImagenPrincipalFile(file);
-    setImagenPrincipalPreview(URL.createObjectURL(file));
+
+    const reducida = await reducirImagen(file, LADO_PRODUCTO);
+    avisarReduccion(file, reducida);
+
+    setImagenPrincipalFile(reducida);
+    setImagenPrincipalPreview(URL.createObjectURL(reducida));
   }
 
-  function handleAdicionalChange(index: number, e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleAdicionalChange(index: number, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!ALLOWED_TYPES.includes(file.type)) { toast.error("Solo JPG, PNG o WEBP"); return; }
     if (file.size > MAX_FILE_SIZE) { toast.error("Máximo 10MB por imagen"); return; }
 
-    const preview = URL.createObjectURL(file);
+    const reducida = await reducirImagen(file, LADO_PRODUCTO);
+    avisarReduccion(file, reducida);
+
+    const preview = URL.createObjectURL(reducida);
     setImagenesAdicionales((prev) => {
       const next = [...prev];
       next[index] = preview;
@@ -159,7 +181,7 @@ export default function ProductoModal({
     });
     setImagenesAdicionalesFiles((prev) => {
       const next = [...prev];
-      next[index] = file;
+      next[index] = reducida;
       return next;
     });
   }

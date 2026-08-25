@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { reducirImagen, LADO_LOGO } from "@/lib/imagenes";
 import type { Comercio, PlanTipo } from "@/types/database";
 import { PLAN_LIMITES, PRECIOS_PLAN, ILIMITADO } from "@/types/database";
 
@@ -122,11 +123,14 @@ export default function ConfiguracionClient({ comercio, userEmail, planPendiente
       let logo_url = comercio.logo_url;
 
       if (logoFile) {
-        const ext = logoFile.name.split(".").pop();
+        // Se reduce recién acá y no al elegir el archivo: la vista previa usa
+        // el original y el redimensionado sólo hace falta si se guarda.
+        const optimizado = await reducirImagen(logoFile, LADO_LOGO);
+        const ext = optimizado.name.split(".").pop();
         const path = `${comercio.id}/logo.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("logos")
-          .upload(path, logoFile, { upsert: true });
+          .upload(path, optimizado, { upsert: true });
         if (uploadError) {
           toast.error("Error al subir el logo");
           return;
