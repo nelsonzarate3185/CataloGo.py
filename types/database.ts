@@ -530,6 +530,26 @@ export type Database = {
         Args: { p_comercio_id: string };
         Returns: boolean;
       };
+      /**
+       * Comercio activo por slug, con sólo las columnas públicas.
+       *
+       * Es `security definer`: el catálogo lo abre cualquiera, con sesión o
+       * sin ella, y la política de la tabla sólo alcanza a `anon`.
+       */
+      comercio_publico: {
+        Args: { p_slug: string };
+        Returns: {
+          id: string;
+          slug: string;
+          nombre: string;
+          descripcion: string | null;
+          logo_url: string | null;
+          whatsapp: string;
+          direccion: string | null;
+          horario_atencion: string | null;
+          maps_url: string | null;
+        }[];
+      };
     };
     Enums: {
       plan_tipo: "basico" | "pro" | "plus" | "business";

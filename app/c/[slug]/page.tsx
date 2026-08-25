@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 import { getCatalogoPorSlug } from "@/lib/catalogo";
 import {
   filtrarProductos,
@@ -27,18 +26,15 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("comercios")
-    .select("nombre, descripcion, logo_url")
-    .eq("slug", slug)
-    .eq("activo", true)
-    .single();
+  // Reutiliza la misma carga que la página: va envuelta en cache(), así que no
+  // agrega consultas, y evita repetir acá el acceso directo a `comercios`, que
+  // falla para un usuario con sesión que no sea el dueño.
+  const catalogo = await getCatalogoPorSlug(slug);
 
-  if (!data) return { title: "Catálogo no encontrado" };
+  if (!catalogo) return { title: "Catálogo no encontrado" };
 
-  const comercio = data as { nombre: string; descripcion: string | null; logo_url: string | null };
+  const comercio = catalogo.comercios;
   const title = `${comercio.nombre} — Catálogo digital`;
   const description =
     comercio.descripcion ??

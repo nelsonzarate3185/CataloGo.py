@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { CatalogoConRelaciones } from "@/types/catalogo";
 import type { Resena } from "@/types/database";
 
+
 /**
  * Carga el catálogo público de un comercio por slug.
  *
@@ -17,24 +18,24 @@ export const getCatalogoPorSlug = cache(
   async (slug: string): Promise<CatalogoConRelaciones | null> => {
     const supabase = await createClient();
 
-    const { data: comercio, error: errorComercio } = await supabase
-      .from("comercios")
-      .select("id, nombre, descripcion, whatsapp, logo_url, direccion, horario_atencion, maps_url")
-      .eq("slug", slug)
-      .eq("activo", true)
-      .single();
+    // Vía función security definer y no consulta directa: la política de
+    // lectura pública de `comercios` es `to anon`, así que un usuario con
+    // sesión que no sea el dueño —el superadmin, u otro comerciante— no puede
+    // leer la fila y el catálogo respondía 404. La función devuelve sólo las
+    // columnas públicas, de modo que abrirla a `authenticated` no expone
+    // user_id ni plan.
+    const { data: filas, error: errorComercio } = await supabase.rpc(
+      "comercio_publico",
+      { p_slug: slug }
+    );
 
-    // PGRST116 es "no se encontró ninguna fila", que para `.single()` significa
-    // que el slug no existe o el comercio está inactivo: eso sí es un 404.
-    // Cualquier otro error (RLS, conexión, esquema) tiene que propagarse. Si se
-    // devuelve null para todo, un fallo de infraestructura se vuelve
-    // indistinguible de una tienda inexistente y no hay forma de diagnosticarlo.
-    if (errorComercio && errorComercio.code !== "PGRST116") {
+    if (errorComercio) {
       throw new Error(
         `Error cargando el comercio "${slug}": ${errorComercio.message} (${errorComercio.code})`
       );
     }
 
+    const comercio = filas?.[0];
     if (!comercio) return null;
 
     const { data: catalogos, error: errorCatalogo } = await supabase
