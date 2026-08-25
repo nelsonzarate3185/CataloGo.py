@@ -48,8 +48,8 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 | `20260825120000_pagos_fecha.sql` | ✅ |
 | `20260825140000_seguridad_p1.sql` | ✅ |
 | `20260825160000_users_y_downgrade.sql` | ✅ |
-| `20260825200000_cupo_cambios_basico.sql` | ⬜ pendiente — cupo de cambios del plan básico |
 | `20260825180000_catalogo_paginado.sql` | ✅ |
+| `20260825200000_cupo_cambios_basico.sql` | ✅ |
 
 Marcar la casilla al aplicarla.
 
