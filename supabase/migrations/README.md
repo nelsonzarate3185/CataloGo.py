@@ -49,6 +49,7 @@ base no tiene, TypeScript compila y la aplicación falla en runtime.
 | `20260825140000_seguridad_p1.sql` | ✅ |
 | `20260825160000_users_y_downgrade.sql` | ✅ |
 | `20260825180000_catalogo_paginado.sql` | ✅ |
+| `20260826100000_limpieza_storage.sql` | ⬜ pendiente — borrado de imágenes al borrar su dueño |
 | `20260825200000_cupo_cambios_basico.sql` | ✅ |
 
 Marcar la casilla al aplicarla.
